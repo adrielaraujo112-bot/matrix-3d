@@ -1,49 +1,53 @@
 
-const HEADERS = {
-  "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "no-store",
+const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store"
 };
 
-const encoder = new TextEncoder();
-
-function response(data, status = 200) {
+function response(status, data) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: HEADERS
+    headers
   });
 }
 
 function equal(a, b) {
-  const x = encoder.encode(String(a ?? ""));
-  const y = encoder.encode(String(b ?? ""));
-  let diff = x.length ^ y.length;
+  a = String(a);
+  b = String(b);
 
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    diff |= (x[i] || 0) ^ (y[i] || 0);
+  if (a.length !== b.length) return false;
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
 
-  return diff === 0;
+  return result === 0;
 }
 
 function base64url(bytes) {
   let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
+  for (const byte of bytes) binary += String.fromCharCode(byte);
 
   return btoa(binary)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
-    .replace(/=+$/, "");
+    .replace(/=+$/g, "");
 }
 
-async function sign(secret, value) {
+function decodeBase64url(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+
+async function sign(payload, secret) {
   const key = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(secret),
+    new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
@@ -52,22 +56,24 @@ async function sign(secret, value) {
   const signature = await crypto.subtle.sign(
     "HMAC",
     key,
-    encoder.encode(value)
+    new TextEncoder().encode(payload)
   );
 
   return base64url(new Uint8Array(signature));
 }
 
 async function makeToken(secret) {
+  const data = {
+    role: "admin",
+    exp: Date.now() + 30 * 60 * 1000,
+    nonce: crypto.randomUUID()
+  };
+
   const payload = base64url(
-    encoder.encode(JSON.stringify({
-      role: "admin",
-      exp: Date.now() + 30 * 60 * 1000,
-      nonce: crypto.randomUUID()
-    }))
+    new TextEncoder().encode(JSON.stringify(data))
   );
 
-  return `${payload}.${await sign(secret, payload)}`;
+  return `${payload}.${await sign(payload, secret)}`;
 }
 
 async function validToken(token, secret) {
@@ -76,20 +82,12 @@ async function validToken(token, secret) {
     if (parts.length !== 2) return false;
 
     const [payload, signature] = parts;
+    const expected = await sign(payload, secret);
 
-    if (!equal(signature, await sign(secret, payload))) {
-      return false;
-    }
-
-    const decoded = atob(
-      payload.replace(/-/g, "+").replace(/_/g, "/") +
-      "=".repeat((4 - payload.length % 4) % 4)
-    );
+    if (!equal(signature, expected)) return false;
 
     const data = JSON.parse(
-      new TextDecoder().decode(
-        Uint8Array.from(decoded, c => c.charCodeAt(0))
-      )
+      new TextDecoder().decode(decodeBase64url(payload))
     );
 
     return data.role === "admin" && data.exp > Date.now();
@@ -104,11 +102,11 @@ function config(env) {
   const admin = env.MATRIX_ADMIN_TOKEN;
 
   if (!url || !key || !admin) {
-    throw new Error("Configure os três secrets na Cloudflare.");
+    throw new Error("Configure as três variáveis secretas na Cloudflare.");
   }
 
   return {
-    url: url.replace(/\/+$/, ""),
+    url: url.replace(/\/$/, ""),
     key,
     admin
   };
@@ -117,25 +115,25 @@ function config(env) {
 async function database(env, method, payload) {
   const { url, key } = config(env);
 
-  const result = await fetch(
-    `${url}/rest/v1/matrix3d_state?id=eq.global`,
-    {
-      method,
-      headers: {
-        apikey: key,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=representation"
-      },
-      ...(payload ? {
-        body: JSON.stringify(payload)
-      } : {})
-    }
-  );
+  const endpoint = `${url}/rest/v1/matrix3d_state`;
+
+  const target = method === "GET"
+    ? `${endpoint}?id=eq.global&select=payload`
+    : `${endpoint}?on_conflict=id`;
+
+  const result = await fetch(target, {
+    method,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=representation"
+    },
+    ...(payload ? { body: JSON.stringify(payload) } : {})
+  });
 
   if (!result.ok) {
-    throw new Error(
-      `Supabase HTTP ${result.status}: ${(await result.text()).slice(0, 200)}`
-    );
+    throw new Error(`Erro no Supabase: HTTP ${result.status}`);
   }
 
   if (method === "GET") {
@@ -146,12 +144,11 @@ async function database(env, method, payload) {
   return true;
 }
 
-export async function onRequest({ request, env }) {
+export async function onRequest(context) {
+  const { request, env } = context;
+
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: HEADERS
-    });
+    return new Response(null, { status: 204, headers });
   }
 
   try {
@@ -160,7 +157,7 @@ export async function onRequest({ request, env }) {
     if (request.method === "GET") {
       const state = await database(env, "GET");
 
-      return response(state || {
+      return response(200, state || {
         updatedAt: Date.now(),
         keys: [],
         maintenance: false,
@@ -177,37 +174,33 @@ export async function onRequest({ request, env }) {
     }
 
     if (request.method !== "POST") {
-      return response({
-        error: "Método não permitido."
-      }, 405);
+      return response(405, { error: "Método não permitido." });
     }
 
     const body = await request.json();
 
     if (body.action === "login") {
-      if (!equal(body.password, admin)) {
-        return response({
+      if (!equal(body.password || "", admin)) {
+        return response(401, {
           error: "Senha administrativa incorreta."
-        }, 401);
+        });
       }
 
-      return response({
+      return response(200, {
         token: await makeToken(admin),
         expiresIn: 1800
       });
     }
 
-    const authorization =
-      request.headers.get("Authorization") || "";
-
-    const token = authorization.startsWith("Bearer ")
-      ? authorization.slice(7)
+    const auth = request.headers.get("Authorization") || "";
+    const token = auth.startsWith("Bearer ")
+      ? auth.slice(7)
       : body.token;
 
-    if (!(await validToken(token, admin))) {
-      return response({
+    if (!await validToken(token, admin)) {
+      return response(401, {
         error: "Sessão ADM inválida ou expirada."
-      }, 401);
+      });
     }
 
     const p = body.payload;
@@ -221,15 +214,15 @@ export async function onRequest({ request, env }) {
       !p.settings ||
       !p.accent
     ) {
-      return response({
+      return response(400, {
         error: "Estado Matrix 3D inválido."
-      }, 400);
+      });
     }
 
     if (p.keys.length > 5000) {
-      return response({
-        error: "Limite de KEYs excedido."
-      }, 413);
+      return response(413, {
+        error: "Limite de KEYS excedido."
+      });
     }
 
     await database(env, "POST", {
@@ -238,14 +231,14 @@ export async function onRequest({ request, env }) {
       updated_at: new Date().toISOString()
     });
 
-    return response({
+    return response(200, {
       ok: true,
       updatedAt: Date.now()
     });
 
   } catch (error) {
-    return response({
+    return response(500, {
       error: error.message || "Erro interno."
-    }, 500);
+    });
   }
-}
+    }
