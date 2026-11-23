@@ -1,65 +1,93 @@
 
-const JSON_HEADERS = {
+const headers = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store"
 };
 
-const enc = new TextEncoder();
-
-function json(data, status = 200) {
+function response(status, data) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: JSON_HEADERS
+    headers
   });
 }
 
-function equalText(a, b) {
-  const x = enc.encode(String(a ?? ""));
-  const y = enc.encode(String(b ?? ""));
-  let diff = x.length ^ y.length;
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+function equal(a, b) {
+  a = String(a);
+  b = String(b);
+
+  if (a.length !== b.length) return false;
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
-  return diff === 0;
+
+  return result === 0;
 }
 
-function b64(bytes) {
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+function base64url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
-async function sign(secret, value) {
+function decodeBase64url(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+
+async function sign(payload, secret) {
   const key = await crypto.subtle.importKey(
-    "raw", enc.encode(secret),
+    "raw",
+    new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
-    false, ["sign"]
+    false,
+    ["sign"]
   );
-  return b64(new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, enc.encode(value))
-  ));
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload)
+  );
+
+  return base64url(new Uint8Array(signature));
 }
 
-async function createToken(secret) {
-  const payload = b64(enc.encode(JSON.stringify({
+async function makeToken(secret) {
+  const data = {
     role: "admin",
-    exp: Date.now() + 1800000,
+    exp: Date.now() + 30 * 60 * 1000,
     nonce: crypto.randomUUID()
-  })));
-  return payload + "." + await sign(secret, payload);
+  };
+
+  const payload = base64url(
+    new TextEncoder().encode(JSON.stringify(data))
+  );
+
+  return `${payload}.${await sign(payload, secret)}`;
 }
 
 async function validToken(token, secret) {
   try {
-    const [payload, signature, extra] = String(token || "").split(".");
-    if (!payload || !signature || extra !== undefined) return false;
-    if (!equalText(signature, await sign(secret, payload))) return false;
+    const parts = String(token || "").split(".");
+    if (parts.length !== 2) return false;
 
-    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const [payload, signature] = parts;
+    const expected = await sign(payload, secret);
+
+    if (!equal(signature, expected)) return false;
+
     const data = JSON.parse(
-      new TextDecoder().decode(
-        Uint8Array.from(decoded, c => c.charCodeAt(0))
-      )
+      new TextDecoder().decode(decodeBase64url(payload))
     );
 
     return data.role === "admin" && data.exp > Date.now();
@@ -74,11 +102,11 @@ function config(env) {
   const admin = env.MATRIX_ADMIN_TOKEN;
 
   if (!url || !key || !admin) {
-    throw new Error("Configure os três secrets na Cloudflare.");
+    throw new Error("Configure as três variáveis secretas na Cloudflare.");
   }
 
   return {
-    url: url.replace(/\/+$/, ""),
+    url: url.replace(/\/$/, ""),
     key,
     admin
   };
@@ -87,38 +115,40 @@ function config(env) {
 async function database(env, method, payload) {
   const { url, key } = config(env);
 
-  const response = await fetch(
-    `${url}/rest/v1/matrix3d_state?id=eq.global`,
-    {
-      method,
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=representation"
-      },
-      ...(payload ? { body: JSON.stringify(payload) } : {})
-    }
-  );
+  const endpoint = `${url}/rest/v1/matrix3d_state`;
 
-  if (!response.ok) {
-    throw new Error(`Supabase HTTP ${response.status}`);
+  const target = method === "GET"
+    ? `${endpoint}?id=eq.global&select=payload`
+    : `${endpoint}?on_conflict=id`;
+
+  const result = await fetch(target, {
+    method,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=representation"
+    },
+    ...(payload ? { body: JSON.stringify(payload) } : {})
+  });
+
+  if (!result.ok) {
+    throw new Error(`Erro no Supabase: HTTP ${result.status}`);
   }
 
   if (method === "GET") {
-    const rows = await response.json();
+    const rows = await result.json();
     return rows?.[0]?.payload ?? null;
   }
 
   return true;
 }
 
-export async function onRequest({ request, env }) {
+export async function onRequest(context) {
+  const { request, env } = context;
+
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: JSON_HEADERS
-    });
+    return new Response(null, { status: 204, headers });
   }
 
   try {
@@ -126,11 +156,15 @@ export async function onRequest({ request, env }) {
 
     if (request.method === "GET") {
       const state = await database(env, "GET");
-      return json(state || {
+
+      return response(200, state || {
         updatedAt: Date.now(),
         keys: [],
         maintenance: false,
-        settings: { pixKey: "", whatsapp: "" },
+        settings: {
+          pixKey: "",
+          whatsapp: ""
+        },
         accent: {
           color: "#8b5cf6",
           hover: "#a78bfa",
@@ -140,18 +174,20 @@ export async function onRequest({ request, env }) {
     }
 
     if (request.method !== "POST") {
-      return json({ error: "Método não permitido." }, 405);
+      return response(405, { error: "Método não permitido." });
     }
 
     const body = await request.json();
 
     if (body.action === "login") {
-      if (!equalText(body.password, admin)) {
-        return json({ error: "Senha administrativa incorreta." }, 401);
+      if (!equal(body.password || "", admin)) {
+        return response(401, {
+          error: "Senha administrativa incorreta."
+        });
       }
 
-      return json({
-        token: await createToken(admin),
+      return response(200, {
+        token: await makeToken(admin),
         expiresIn: 1800
       });
     }
@@ -161,8 +197,10 @@ export async function onRequest({ request, env }) {
       ? auth.slice(7)
       : body.token;
 
-    if (!(await validToken(token, admin))) {
-      return json({ error: "Sessão ADM inválida ou expirada." }, 401);
+    if (!await validToken(token, admin)) {
+      return response(401, {
+        error: "Sessão ADM inválida ou expirada."
+      });
     }
 
     const p = body.payload;
@@ -176,11 +214,15 @@ export async function onRequest({ request, env }) {
       !p.settings ||
       !p.accent
     ) {
-      return json({ error: "Estado Matrix 3D inválido." }, 400);
+      return response(400, {
+        error: "Estado Matrix 3D inválido."
+      });
     }
 
     if (p.keys.length > 5000) {
-      return json({ error: "Limite de KEYs excedido." }, 413);
+      return response(413, {
+        error: "Limite de KEYS excedido."
+      });
     }
 
     await database(env, "POST", {
@@ -189,12 +231,14 @@ export async function onRequest({ request, env }) {
       updated_at: new Date().toISOString()
     });
 
-    return json({ ok: true, updatedAt: Date.now() });
+    return response(200, {
+      ok: true,
+      updatedAt: Date.now()
+    });
 
   } catch (error) {
-    return json({
+    return response(500, {
       error: error.message || "Erro interno."
-    }, 500);
+    });
   }
-                                         }
-        
+}
