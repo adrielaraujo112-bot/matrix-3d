@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matrix 3D VIP & Save</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style id="dynamicAccentStyle">
+        :root {
+            --accent: #8b5cf6;
+            --accent-hover: #a78bfa;
+            --accent-dark: #6d28d9;
+            --accent-soft: rgba(139, 92, 246, 0.16);
+            --accent-border: rgba(167, 139, 250, 0.38);
+            --accent-glow: rgba(139, 92, 246, 0.28);
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Accent Dynamic Utility Overrides */
+        .accent-text { color: var(--accent) !important; }
+        .accent-bg { background-color: var(--accent) !important; }
+        .accent-bg:hover { background-color: var(--accent-hover) !important; }
+        .accent-soft-bg { background-color: var(--accent-soft) !important; }
+        .accent-border { border-color: var(--accent-border) !important; }
+        .accent-solid-border { border-color: var(--accent) !important; }
+        .accent-shadow { box-shadow: 0 10px 28px -6px var(--accent-glow) !important; }
+        .accent-gradient {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent), var(--accent-dark)) !important;
+        }
+        .splash-glow {
+            background: radial-gradient(circle at 50% 40%, var(--accent-glow), transparent 65%);
+        }
+
+        /* Matrix violet polish: visual-only refinements for the admin surface. */
+        #adminDashboardModal > div {
+            border-color: var(--accent-border) !important;
+            box-shadow: 0 28px 80px rgba(0,0,0,.72), 0 0 42px var(--accent-glow) !important;
+            background-image: radial-gradient(ellipse at 8% 0%, var(--accent-soft), transparent 42%), linear-gradient(180deg, #101522 0%, #0b0e16 100%) !important;
+        }
+        #adminDashboardModal input:focus,
+        #adminDashboardModal select:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px var(--accent-soft) !important;
+        }
+        #adminDashboardModal button { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        #adminDashboardModal button:hover { filter: brightness(1.08); }
+        #adminDashboardModal button:active { transform: scale(.985); }
+
+        /* STRICT OVERLAY ISOLATION: Inactive overlays NEVER block touches or clicks */
+        .app-overlay {
+            position: fixed;
+            inset: 0;
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+        }
+
+        .app-overlay.is-active {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            z-index: 9990 !important;
+        }
+
+        .app-overlay.is-active-block {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            z-index: 9990 !important;
+        }
+
+        /* Active Main Layers */
+        #mainHeader {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+        }
+
+        #mainAppContent,
+        #vipEditorView {
+            position: relative;
+            z-index: 20;
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+        }
+
+        button, input, select, textarea, label, [data-action] {
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#09090b] text-zinc-100 selection:bg-amber-500 selection:text-zinc-950">
+
+    <!-- =====================================================================
+         1. SPLASH SCREEN (STEP 1)
+         ===================================================================== -->
+    <div id="splashScreen" class="app-overlay is-active bg-[#09090b] flex-col items-center justify-center p-6 text-center select-none">
+        <div class="absolute inset-0 splash-glow pointer-events-none"></div>
+        <div class="relative z-10 w-full max-w-sm flex flex-col items-center">
+            <!-- Custom N10 + Crown SVG Emblem -->
+            <div class="w-20 h-20 rounded-3xl accent-gradient flex items-center justify-center shadow-2xl accent-shadow mb-6 animate-pulse">
+                <svg viewBox="0 0 64 64" class="w-12 h-12 text-zinc-950" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <!-- Crown on top -->
+                    <path d="M18 22L14 11L25 17L32 9L39 17L50 11L46 22H18Z" fill="currentColor"/>
+                    <rect x="18" y="23.5" width="28" height="3" rx="1.5" fill="currentColor"/>
+                    <!-- Bold N10 -->
+                    <text x="32" y="48" text-anchor="middle" fill="currentColor" font-family="Inter, sans-serif" font-weight="900" font-size="21" letter-spacing="-0.5">N10</text>
+                </svg>
+            </div>
+            <span class="px-3.5 py-1 rounded-full accent-soft-bg border accent-border accent-text text-[11px] font-extrabold uppercase tracking-widest mb-3">
+                PLATAFORMA OFICIAL
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
+                Matrix 3D <span class="accent-text">VIP &amp; Save</span>
+            </h1>
+            <p class="text-xs text-zinc-400 mb-7">Inicializando módulos de sincronização e leitura .json...</p>
+
+            <div class="w-full flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider mb-2">
+                <span class="accent-text">CARREGANDO</span>
+                <span id="splashPercent" class="accent-text mono-font">0%</span>
+            </div>
+            <div class="w-full h-2.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 p-0.5">
+                <div id="splashBar" class="h-full w-0 accent-gradient rounded-full transition-all duration-150 ease-out"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         2. NICKNAME LOGIN SCREEN (STEP 2)
+         ===================================================================== -->
+    <div id="nickLoginScreen" class="app-overlay bg-[#09090b] flex-col items-center justify-center p-5">
+        <div class="absolute inset-0 splash-glow pointer-events-none"></div>
+        <div class="relative z-10 w-full max-w-md bg-[#121215] border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+            <div class="flex flex-col items-center text-center mb-6">
+                <div class="w-16 h-16 rounded-2xl accent-gradient flex items-center justify-center shadow-lg accent-shadow mb-4">
+                    <svg viewBox="0 0 64 64" class="w-10 h-10 text-zinc-950" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M18 22L14 11L25 17L32 9L39 17L50 11L46 22H18Z" fill="currentColor"/>
+                        <rect x="18" y="23.5" width="28" height="3" rx="1.5" fill="currentColor"/>
+                        <text x="32" y="48" text-anchor="middle" fill="currentColor" font-family="Inter, sans-serif" font-weight="900" font-size="21" letter-spacing="-0.5">N10</text>
+                    </svg>
+                </div>
+                <span class="px-3 py-0.5 rounded-full accent-soft-bg border accent-border accent-text text-[10px] font-extrabold uppercase tracking-widest mb-2">
+                    IDENTIFICAÇÃO DE ACESSO
+                </span>
+                <h2 class="text-2xl font-black text-white">Matrix 3D <span class="accent-text">VIP &amp; Save</span></h2>
+                <p class="text-xs text-zinc-400 mt-1">Digite seu nickname para liberar o painel principal.</p>
+            </div>
+
+            <form id="nickLoginForm" class="space-y-4" novalidate>
+                <div>
+                    <label for="usernameInput" class="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
+                        Seu Nickname:
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center accent-text pointer-events-none">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input id="usernameInput" type="text" maxlength="24" placeholder="Ex: L7" autocomplete="nickname"
+                            class="w-full pl-11 pr-4 py-3.5 bg-[#09090b] border border-zinc-800 rounded-2xl text-white font-semibold placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition">
+                    </div>
+                </div>
+
+                <button id="startNickBtn" type="submit" data-action="submit-nick"
+                    class="w-full py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg accent-shadow transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-play pointer-events-none"></i>
+                    <span class="pointer-events-none">INICIAR</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         3. KEY LOADING OVERLAY ("CARREGANDO KEY...")
+         ===================================================================== -->
+    <div id="keyLoadingOverlay" class="app-overlay bg-[#09090b]/95 backdrop-blur-md flex-col items-center justify-center p-6 text-center select-none">
+        <div class="w-full max-w-sm bg-[#121215] border accent-border rounded-3xl p-7 shadow-2xl space-y-4">
+            <div class="w-14 h-14 rounded-2xl accent-gradient text-zinc-950 flex items-center justify-center mx-auto text-2xl shadow-lg accent-shadow animate-spin">
+                <i class="fa-solid fa-circle-notch"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-white">Carregando key...</h3>
+                <p class="text-xs text-zinc-400 mt-1">Validando chave VIP e preparando o editor .json...</p>
+            </div>
+            <div class="w-full h-2 bg-[#09090b] rounded-full overflow-hidden border border-zinc-800">
+                <div id="keyLoadingProgressBar" class="h-full w-0 accent-gradient rounded-full transition-all duration-150 ease-out"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         4. GLOBAL MAINTENANCE OVERLAY
+         ===================================================================== -->
+    <div id="maintenanceOverlay" class="app-overlay bg-[#09090b]/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center">
+        <div class="w-full max-w-md bg-[#121215] border accent-border rounded-3xl p-7 shadow-2xl">
+            <div class="w-16 h-16 rounded-2xl accent-soft-bg border accent-border accent-text flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <span class="px-3 py-1 rounded-full accent-soft-bg accent-text text-[11px] font-extrabold uppercase tracking-widest">
+                AVISO DO SISTEMA
+            </span>
+            <h2 class="text-2xl font-black text-white mt-3">Painel em Manutenção</h2>
+            <p class="text-sm text-zinc-400 mt-2 leading-relaxed">
+                O sistema está temporariamente em manutenção para atualizações. Volte em instantes.
+            </p>
+            <div class="mt-6 pt-5 border-t border-zinc-800">
+                <button type="button" data-action="open-admin-auth"
+                    class="w-full py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-shield-halved accent-text pointer-events-none"></i>
+                    <span class="pointer-events-none">Acesso Administrativo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         5. TOP HEADER
+         ===================================================================== -->
+    <header id="mainHeader" class="hidden bg-[#09090b]/90 backdrop-blur-lg border-b border-zinc-800/80">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <!-- N10 + Crown Gold Badge -->
+                <div class="w-10 h-10 rounded-xl accent-gradient flex items-center justify-center shrink-0 shadow-md accent-shadow">
+                    <svg viewBox="0 0 64 64" class="w-7 h-7 text-zinc-950" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M18 22L14 11L25 17L32 9L39 17L50 11L46 22H18Z" fill="currentColor"/>
+                        <rect x="18" y="23.5" width="28" height="3" rx="1.5" fill="currentColor"/>
+                        <text x="32" y="48" text-anchor="middle" fill="currentColor" font-family="Inter, sans-serif" font-weight="900" font-size="21" letter-spacing="-0.5">N10</text>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="text-sm sm:text-base font-black text-white truncate">
+                        Matrix 3D <span class="accent-text">VIP &amp; Save</span>
+                    </h1>
+                    <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span id="headerUsernameLabel" class="font-semibold text-zinc-300 truncate">Jogador</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" data-action="switch-user" title="Trocar Nickname"
+                    class="px-3 py-2 rounded-xl bg-[#121215] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-user-pen accent-text pointer-events-none"></i>
+                    <span class="hidden sm:inline pointer-events-none">Trocar Nick</span>
+                </button>
+                <button type="button" data-action="open-admin-auth"
+                    class="px-3.5 py-2 rounded-xl bg-[#121215] hover:bg-zinc-800 border accent-border accent-text text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-shield-halved pointer-events-none"></i>
+                    <span class="pointer-events-none">Painel ADM</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- =====================================================================
+         6. MAIN SCREEN (KEY ACTIVATION + VIP PLANS + FOOTER)
+         ===================================================================== -->
+    <main id="mainAppContent" class="hidden flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
+
+        <!-- CARD 1: ÁREA DE ACESSO VIP -->
+        <section id="keyActivationSection" class="bg-[#121215] border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full accent-soft-bg border accent-border accent-text text-[11px] font-extrabold uppercase tracking-wider">
+                    <i class="fa-solid fa-key"></i> ÁREA DE ACESSO VIP
+                </span>
+                <span id="syncStatusIndicator" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Sincronização Ativa</span>
+                </span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-black text-white">Já possui uma Chave VIP?</h2>
+            <p class="text-xs sm:text-sm text-zinc-400 mt-1 mb-4">
+                Insira sua Key abaixo para desbloquear o Editor de Save (<code class="accent-text mono-font">.json</code>) e visualizar o código bruto.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center accent-text pointer-events-none">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input id="vipKeyInput" type="text" placeholder="EX: M3D-1D-XXXX-XXXX" autocomplete="off"
+                        class="w-full pl-11 pr-4 py-3.5 bg-[#09090b] border border-zinc-800 rounded-2xl text-white mono-font text-sm font-bold uppercase placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition">
+                </div>
+                <button id="activateKeyBtn" type="button" data-action="activate-key"
+                    class="px-6 py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg accent-shadow transition active:scale-[0.99] flex items-center justify-center gap-2 shrink-0 cursor-pointer">
+                    <i class="fa-solid fa-bolt pointer-events-none"></i>
+                    <span class="pointer-events-none">ATIVAR KEY VIP</span>
+                </button>
+            </div>
+
+            <div id="keyFeedbackBox" class="hidden mt-3 p-3.5 rounded-2xl text-xs font-semibold border"></div>
+        </section>
+
+        <!-- CARD 2: PLANOS & ASSINATURAS VIP -->
+        <section id="vipPlansSection" class="space-y-4">
+            <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-[11px] font-extrabold accent-text uppercase tracking-widest">PLANOS &amp; ASSINATURAS VIP</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">Escolha seu Plano VIP</h2>
+                        <p class="text-xs text-zinc-400 mt-1">Pagamento instantâneo via Pix com liberação imediata da sua Key.</p>
+                    </div>
+
+                    <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between sm:justify-end gap-3">
+                        <div>
+                            <span class="block text-[10px] font-bold text-zinc-400 uppercase">CHAVE PIX OFICIAL</span>
+                            <span id="storePixKeyDisplay" class="text-sm font-black accent-text mono-font">98981701265</span>
+                        </div>
+                        <button type="button" data-action="copy-pix"
+                            class="px-3.5 py-2 rounded-xl accent-soft-bg border accent-border accent-text text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-regular fa-copy pointer-events-none"></i>
+                            <span class="pointer-events-none">Copiar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Pricing Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- VIP 1 Dia -->
+                <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:border-zinc-700 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-extrabold uppercase">ACESSO 24H</span>
+                            <i class="fa-solid fa-bolt accent-text"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white">VIP 1 Dia</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Acesso rápido por 24 horas ao editor .json e código bruto.</p>
+                        <div class="my-5 flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black accent-text">R$ 1,00</span>
+                            <span class="text-xs text-zinc-500">/ 24 horas</span>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Leitura e edição .json</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Lupa de busca no código bruto</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Exportação imediata</li>
+                        </ul>
+                    </div>
+                    <button type="button" data-action="buy-plan" data-plan="VIP 1 Dia" data-price="R$ 1,00" data-code="1D"
+                        class="w-full py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
+                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                    </button>
+                </div>
+
+                <!-- VIP 2 Dias -->
+                <div class="bg-[#121215] border accent-border rounded-3xl p-6 flex flex-col justify-between shadow-xl accent-shadow">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-full accent-soft-bg accent-text text-[10px] font-extrabold uppercase">MAIS ESCOLHIDO</span>
+                            <i class="fa-solid fa-fire accent-text"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white">VIP 2 Dias</h3>
+                        <p class="text-xs text-zinc-400 mt-1">48 horas completas de acesso liberado ao editor de saves.</p>
+                        <div class="my-5 flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black accent-text">R$ 2,00</span>
+                            <span class="text-xs text-zinc-500">/ 48 horas</span>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Leitura e edição .json completa</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Busca avançada no código bruto</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Suporte prioritário WhatsApp</li>
+                        </ul>
+                    </div>
+                    <button type="button" data-action="buy-plan" data-plan="VIP 2 Dias" data-price="R$ 2,00" data-code="2D"
+                        class="w-full py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg accent-shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
+                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                    </button>
+                </div>
+
+                <!-- VIP 3 Dias / Permanente -->
+                <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:border-zinc-700 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold uppercase">ACESSO TOTAL</span>
+                            <i class="fa-solid fa-crown accent-text"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white">VIP 3 Dias / Permanente</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Acesso ilimitado e vitalício a todos os recursos do Matrix 3D.</p>
+                        <div class="my-5 flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black accent-text">R$ 3,50</span>
+                            <span class="text-xs text-zinc-500">/ permanente</span>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Chave permanente sem expiração</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Edição ilimitada de arquivos .json</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Atualizações futuras inclusas</li>
+                        </ul>
+                    </div>
+                    <button type="button" data-action="buy-plan" data-plan="VIP 3 Dias / Permanente" data-price="R$ 3,50" data-code="PERM"
+                        class="w-full py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
+                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clean Footer -->
+            <footer class="bg-[#121215] border border-zinc-800/80 rounded-3xl px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span class="text-xs font-extrabold text-white tracking-wide">Matrix 3D VIP &amp; Save</span>
+                    <span class="text-xs text-zinc-400">• Ativação rápida via Pix</span>
+                </div>
+                <div class="flex items-center gap-4 text-[11px] font-semibold text-zinc-400">
+                    <span><i class="fa-solid fa-cloud accent-text mr-1"></i>Keys Sincronizadas</span>
+                    <span><i class="fa-brands fa-whatsapp text-emerald-400 mr-1"></i>Suporte Oficial</span>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+    <!-- =====================================================================
+         7. DEDICATED POST-LOADING VIP EDITOR VIEW (CLEAN & FOCUSED)
+         ===================================================================== -->
+    <section id="vipEditorView" class="hidden flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-5">
+        <!-- a) Top-left Back Arrow Button + Active Key/Time Badge -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <button id="editorBackBtn" type="button" data-action="back-to-main"
+                class="px-4 py-2.5 rounded-2xl bg-[#121215] hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white text-xs sm:text-sm font-black transition flex items-center gap-2.5 shadow-lg cursor-pointer">
+                <i class="fa-solid fa-arrow-left accent-text pointer-events-none"></i>
+                <span class="pointer-events-none">Voltar para Tela Principal</span>
+            </button>
+
+            <div class="flex items-center gap-2.5 bg-[#121215] border accent-border rounded-2xl px-4 py-2">
+                <span id="editorActivePlanBadge" class="px-2.5 py-0.5 rounded-full accent-soft-bg accent-text text-[10px] font-extrabold uppercase">VIP ATIVO</span>
+                <span id="editorActiveKeyLabel" class="text-xs mono-font text-zinc-300 font-bold">KEY</span>
+                <span class="text-zinc-600">|</span>
+                <span id="editorTimerBadge" class="text-xs mono-font font-black accent-text">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- b) Section to Upload / Add .json File or Paste JSON -->
+        <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-code accent-text"></i>
+                        <span>Carregar Código .json</span>
+                    </h2>
+                    <p class="text-xs text-zinc-400 mt-0.5">
+                        Selecione um arquivo <code class="accent-text mono-font">.json</code> do seu aparelho ou cole o conteúdo abaixo.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <label for="jsonFileUploadInput"
+                        class="px-4 py-2.5 rounded-xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider transition flex items-center gap-2 cursor-pointer shadow-md accent-shadow">
+                        <i class="fa-solid fa-upload pointer-events-none"></i>
+                        <span class="pointer-events-none">Adicionar Arquivo .json</span>
+                    </label>
+                    <input id="jsonFileUploadInput" type="file" accept=".json,application/json,text/plain" class="hidden">
+                </div>
+            </div>
+
+            <!-- Drag & Drop / Quick Paste Area -->
+            <div id="jsonDropZone" class="border-2 border-dashed border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 bg-[#09090b] transition space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span class="text-zinc-400"><i class="fa-solid fa-folder-open accent-text mr-1.5"></i>Arquivo atual: <strong id="loadedFileNameLabel" class="text-white mono-font">nenhum_arquivo.json</strong></span>
+                    <button type="button" data-action="load-sample-json" class="text-xs font-bold accent-text hover:underline cursor-pointer">
+                        Carregar Exemplo .json
+                    </button>
+                </div>
+            </div>
+
+            <!-- c) Search Bar with Magnifying Glass (Lupa) -->
+            <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center accent-text pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input id="rawJsonSearchInput" type="text" placeholder="Pesquisar no código bruto .json (ex: coins, id, name)..."
+                        class="w-full pl-10 pr-3 py-2.5 bg-[#121215] border border-zinc-800 rounded-xl text-white text-xs sm:text-sm font-medium placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition">
+                </div>
+                <div class="flex items-center justify-between sm:justify-end gap-2">
+                    <span id="searchMatchCounter" class="px-3 py-1.5 rounded-xl bg-[#121215] border border-zinc-800 text-[11px] mono-font text-zinc-400">
+                        0 resultados
+                    </span>
+                    <button type="button" data-action="search-raw-json"
+                        class="px-4 py-2.5 rounded-xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                        <i class="fa-solid fa-magnifying-glass pointer-events-none"></i>
+                        <span class="pointer-events-none">Buscar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- d) Raw JSON Code Editor Textarea Below -->
+            <div class="space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label for="rawJsonCodeEditor" class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-code accent-text"></i>
+                            <span>Código Bruto .json</span>
+                        </label>
+                        <span id="editorPlanLimitBadge" class="px-2.5 py-0.5 rounded-full accent-soft-bg border accent-border accent-text text-[10px] font-extrabold tracking-wide">
+                            1D: Máx 10.000 Coins | Até linha Coin
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" data-action="format-raw-json"
+                            class="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition cursor-pointer">
+                            Formatar JSON
+                        </button>
+                        <button type="button" data-action="copy-raw-json"
+                            class="px-3 py-1.5 rounded-xl accent-soft-bg border accent-border accent-text text-xs font-bold transition cursor-pointer">
+                            Copiar JSON
+                        </button>
+                    </div>
+                </div>
+
+                <textarea id="rawJsonCodeEditor" rows="15" spellcheck="false"
+                    placeholder='Cole aqui seu código .json ou clique em "Adicionar Arquivo .json" acima...'
+                    class="w-full p-4 bg-[#09090b] border border-zinc-800 rounded-2xl text-emerald-400 mono-font text-xs leading-relaxed focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+
+            <button type="button" data-action="download-raw-json"
+                class="w-full py-3.5 px-6 rounded-2xl accent-bg text-zinc-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg accent-shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-download pointer-events-none"></i>
+                <span class="pointer-events-none">Baixar Arquivo .json Modificado</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         7B. KEY SECURITY LOCK OVERLAY (UNLOCK CODE FOR ADMIN)
+         ===================================================================== -->
+    <div id="keyLockModal" class="app-overlay bg-black/90 backdrop-blur-md items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#121215] border border-red-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <div>
+                <span class="px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-extrabold uppercase tracking-widest">
+                    KEY BLOQUEADA POR SEGURANÇA
+                </span>
+                <h3 class="text-xl font-black text-white mt-2.5">Limite do Plano Ultrapassado</h3>
+                <p id="keyLockReasonText" class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                    Você alterou uma área ou valor não permitido pelo seu plano VIP.
+                </p>
+            </div>
+
+            <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-4 space-y-2 text-left">
+                <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-zinc-400 font-bold uppercase">Key Bloqueada:</span>
+                    <span id="lockedKeyCodeDisplay" class="mono-font font-bold text-white">-</span>
+                </div>
+                <div class="pt-2 border-t border-zinc-800">
+                    <span class="block text-[10px] font-extrabold text-amber-400 uppercase tracking-wider mb-1.5">
+                        Código de Desbloqueio (Envie ao ADM):
+                    </span>
+                    <div class="flex items-center justify-between gap-2 bg-[#121215] p-3 rounded-xl border border-amber-500/30">
+                        <code id="generatedUnlockCodeDisplay" class="text-sm sm:text-base font-black text-amber-400 mono-font tracking-wider">UNLK-0000-0000</code>
+                        <button type="button" data-action="copy-unlock-code"
+                            class="px-3 py-1.5 rounded-lg accent-bg text-zinc-950 font-black text-xs uppercase cursor-pointer">
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-zinc-400">
+                Somente o <strong class="text-white">Administrador</strong> pode liberar esta Key usando o código acima no Painel ADM.
+            </p>
+
+            <button type="button" data-action="close-key-lock-modal"
+                class="w-full py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer">
+                Voltar para Tela Principal
+            </button>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         8. PIX CHECKOUT MODAL
+         ===================================================================== -->
+    <div id="checkoutModal" class="app-overlay bg-black/80 backdrop-blur-sm items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#121215] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest">PAGAMENTO VIA PIX</span>
+                    <h3 id="checkoutPlanTitle" class="text-xl font-black text-white">Plano VIP</h3>
+                </div>
+                <button type="button" data-action="close-checkout" class="w-9 h-9 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark pointer-events-none"></i>
+                </button>
+            </div>
+
+            <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-zinc-400">Valor do Plano:</span>
+                    <span id="checkoutPlanPrice" class="text-lg font-black accent-text">R$ 0,00</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-zinc-400">Usuário:</span>
+                    <span id="checkoutUserNick" class="font-bold text-white">-</span>
+                </div>
+                <div class="pt-2 border-t border-zinc-800">
+                    <span class="block text-[10px] font-bold text-zinc-400 uppercase mb-1.5">Chave Pix:</span>
+                    <div class="flex items-center justify-between gap-2 bg-[#121215] p-2.5 rounded-xl border border-zinc-800">
+                        <code id="checkoutPixCode" class="text-sm font-black accent-text mono-font">98981701265</code>
+                        <button type="button" data-action="copy-pix" class="px-3 py-1.5 rounded-lg accent-bg text-zinc-950 font-extrabold text-xs cursor-pointer">
+                            Copiar Pix
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" data-action="confirm-whatsapp"
+                class="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-base pointer-events-none"></i>
+                <span class="pointer-events-none">Enviar Comprovante no WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         9. ADMIN PASSWORD MODAL
+         ===================================================================== -->
+    <div id="adminAuthModal" class="app-overlay bg-black/80 backdrop-blur-sm items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#121215] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl accent-soft-bg accent-text flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-white">Painel ADM</h3>
+                        <p class="text-[11px] text-zinc-400">Digite a senha de administrador.</p>
+                    </div>
+                </div>
+                <button type="button" data-action="close-admin-auth" class="w-8 h-8 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark pointer-events-none"></i>
+                </button>
+            </div>
+
+            <form id="adminAuthForm" class="space-y-3" novalidate>
+                <input id="adminPasswordInput" type="password" placeholder="Senha ADM..."
+                    class="w-full px-4 py-3 bg-[#09090b] border border-zinc-800 rounded-2xl text-white text-sm font-bold focus:outline-none focus:border-amber-500">
+
+                <div id="adminAuthError" class="hidden text-xs font-bold text-red-400">
+                    Senha incorreta! Tente novamente.
+                </div>
+
+                <button type="submit" data-action="submit-admin-login"
+                    class="w-full py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider transition cursor-pointer">
+                    ENTRAR NO PAINEL ADM
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         10. ADMIN DASHBOARD MODAL
+         ===================================================================== -->
+    <div id="adminDashboardModal" class="app-overlay bg-[#07090e]/95 backdrop-blur-2xl overflow-y-auto p-3 sm:p-6">
+        <div class="max-w-4xl mx-auto bg-gradient-to-b from-[#0c0f16] to-[#131824] border border-amber-400/35 rounded-[20px] p-4 sm:p-7 space-y-6 my-2 shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(245,158,11,0.12)] overflow-x-hidden">
+            <!-- Header ADM -->
+            <div class="flex items-center justify-between gap-3 pb-5 border-b border-zinc-800/80">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <!-- N10 + Crown Emblem -->
+                    <div class="w-12 h-12 rounded-2xl accent-gradient flex items-center justify-center shrink-0 shadow-lg accent-shadow">
+                        <svg viewBox="0 0 64 64" class="w-8 h-8 text-zinc-950" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M18 22L14 11L25 17L32 9L39 17L50 11L46 22H18Z" fill="currentColor"/>
+                            <rect x="18" y="23.5" width="28" height="3" rx="1.5" fill="currentColor"/>
+                            <text x="32" y="48" text-anchor="middle" fill="currentColor" font-family="Inter, sans-serif" font-weight="900" font-size="21" letter-spacing="-0.5">N10</text>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span id="cloudSyncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>NUVEM ATIVA</span>
+                            </span>
+                        </div>
+                        <h2 class="text-base sm:text-xl font-black text-white tracking-tight truncate">
+                            PAINEL ADMINISTRATIVO <span class="accent-text">// MATRIX 3D</span>
+                        </h2>
+                    </div>
+                </div>
+
+                <button type="button" data-action="close-admin-dashboard" aria-label="Fechar Painel ADM"
+                    class="w-10 h-10 rounded-full bg-zinc-900/90 hover:bg-red-500/20 border border-zinc-700/80 hover:border-red-500/40 text-zinc-300 hover:text-red-400 text-sm font-black transition flex items-center justify-center shrink-0 cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Organized Stats Summary Strip -->
+            <div class="grid grid-cols-3 gap-2.5 sm:gap-4">
+                <div class="bg-[#090c12]/90 border border-zinc-800/90 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <span class="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider truncate">Total Keys</span>
+                        <span id="adminKeysCountBadge" class="text-base sm:text-xl font-black text-white tabular-nums mt-0.5 block">0 keys</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl accent-soft-bg border accent-border accent-text hidden sm:flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-key text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="bg-[#090c12]/90 border border-zinc-800/90 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <span class="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider truncate">Status Nuvem</span>
+                        <span class="text-sm sm:text-lg font-black text-emerald-400 tabular-nums mt-0.5 block">Sincronizado</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hidden sm:flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="bg-[#090c12]/90 border border-zinc-800/90 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <span class="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider truncate">Acesso Global</span>
+                        <span class="text-sm sm:text-lg font-black accent-text tabular-nums mt-0.5 block">Multi-Usuário</span>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl accent-soft-bg border accent-border accent-text hidden sm:flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-users text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 1: Gerador de Keys VIP -->
+            <div class="bg-[#090c12]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest">SEÇÃO 01 // EMISSÃO DE ACESSO</span>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2 mt-0.5">
+                            <i class="fa-solid fa-wand-magic-sparkles accent-text"></i>
+                            <span>Gerador de Keys VIP</span>
+                        </h3>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400">
+                        Válida para todos os clientes
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-end">
+                    <div class="sm:col-span-4 space-y-1.5">
+                        <label for="adminKeyDurationSelect" class="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                            Duração do Plano
+                        </label>
+                        <select id="adminKeyDurationSelect"
+                            class="w-full min-h-[44px] px-4 py-2.5 bg-[#121622] border border-zinc-800 rounded-xl text-white text-xs sm:text-sm font-bold focus:outline-none focus:border-amber-500 transition">
+                            <option value="1D">1 Dia (24 Horas)</option>
+                            <option value="2D">2 Dias (48 Horas)</option>
+                            <option value="3D">3 Dias (72 Horas)</option>
+                            <option value="PERM">Permanente (Vitalício)</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-5 space-y-1.5">
+                        <label for="adminCustomKeyInput" class="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                            Código Personalizado (Opcional)
+                        </label>
+                        <input id="adminCustomKeyInput" type="text" placeholder="Ex: M3D-VIP-2026"
+                            class="w-full min-h-[44px] px-4 py-2.5 bg-[#121622] border border-zinc-800 rounded-xl text-white mono-font text-xs sm:text-sm font-bold uppercase placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition">
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <button type="button" data-action="generate-vip-key"
+                            class="w-full min-h-[44px] px-5 py-2.5 rounded-xl accent-gradient text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg accent-shadow transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-plus pointer-events-none"></i>
+                            <span class="pointer-events-none">GERAR NOVA KEY</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Controles do Sistema & Aparência -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Manutenção, Pix & Sincronização -->
+                <div class="bg-[#090c12]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-4 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between gap-3 pb-3.5 border-b border-zinc-800/80">
+                            <div>
+                                <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest block">SEÇÃO 02 // SISTEMA</span>
+                                <h4 class="text-sm font-black text-white mt-0.5">Modo Manutenção</h4>
+                                <p class="text-[11px] text-zinc-400">Bloqueia visitantes (ADM continua livre).</p>
+                            </div>
+                            <button id="maintenanceToggleBtn" type="button" data-action="toggle-maintenance"
+                                class="min-h-[40px] px-4 py-2 rounded-xl bg-zinc-800 text-zinc-200 font-black text-xs uppercase tracking-wider transition shrink-0 cursor-pointer">
+                                DESATIVADO
+                            </button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="adminPixInput" class="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Chave Pix Oficial da Loja</label>
+                            <div class="flex gap-2">
+                                <input id="adminPixInput" type="text" class="flex-1 min-w-0 min-h-[42px] px-3.5 py-2 bg-[#121622] border border-zinc-800 rounded-xl text-white mono-font text-xs font-bold focus:outline-none focus:border-amber-500">
+                                <button type="button" data-action="save-pix-setting"
+                                    class="min-h-[42px] px-4 py-2 rounded-xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider shrink-0 cursor-pointer">
+                                    Salvar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-zinc-800/80">
+                        <button type="button" data-action="sync-now-admin"
+                            class="w-full min-h-[42px] px-4 py-2.5 rounded-xl accent-soft-bg border accent-border accent-text text-xs font-extrabold uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-rotate pointer-events-none"></i>
+                            <span class="pointer-events-none">Forçar Sincronização na Nuvem</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Personalização de Cor Global -->
+                <div class="bg-[#090c12]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest block">APARÊNCIA GLOBAL</span>
+                        <h4 class="text-sm font-black text-white mt-0.5">Cor de Destaque do Painel</h4>
+                        <p class="text-[11px] text-zinc-400 mt-0.5">Altera a cor principal em todo o site para você e seus clientes.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-5 gap-2.5">
+                            <button type="button" data-action="set-accent" data-color="#8b5cf6" data-hover="#a78bfa" data-dark="#6d28d9"
+                                class="h-11 rounded-xl bg-[#8b5cf6] border-2 border-white/25 hover:scale-105 transition cursor-pointer" title="Ouro N10"></button>
+                            <button type="button" data-action="set-accent" data-color="#10b981" data-hover="#34d399" data-dark="#047857"
+                                class="h-11 rounded-xl bg-[#10b981] border-2 border-white/25 hover:scale-105 transition cursor-pointer" title="Esmeralda"></button>
+                            <button type="button" data-action="set-accent" data-color="#3b82f6" data-hover="#60a5fa" data-dark="#1d4ed8"
+                                class="h-11 rounded-xl bg-[#3b82f6] border-2 border-white/25 hover:scale-105 transition cursor-pointer" title="Azul"></button>
+                            <button type="button" data-action="set-accent" data-color="#ef4444" data-hover="#f87171" data-dark="#b91c1c"
+                                class="h-11 rounded-xl bg-[#ef4444] border-2 border-white/25 hover:scale-105 transition cursor-pointer" title="Vermelho"></button>
+                            <label class="h-11 rounded-xl bg-[#121622] border border-zinc-700 hover:border-zinc-500 flex items-center justify-center cursor-pointer" title="Escolher Cor Livre">
+                                <input id="customAccentPicker" type="color" value="#8b5cf6" class="w-6 h-6 bg-transparent border-0 cursor-pointer">
+                            </label>
+                        </div>
+                        <p class="text-[11px] text-zinc-500">Toque em uma paleta acima ou escolha uma cor personalizada no seletor.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Lista de Keys Gerenciadas -->
+            <div class="bg-[#090c12]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/80">
+                    <div>
+                        <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest block">SEÇÃO 03 // BANCO DE CHAVES</span>
+                        <h4 class="text-base font-black text-white mt-0.5">Lista de Keys Gerenciadas</h4>
+                    </div>
+
+                    <!-- Quick Unlock by Unlock Code -->
+                    <div class="flex items-center gap-2">
+                        <input id="adminUnlockCodeInput" type="text" placeholder="Código UNLK-XXXX..."
+                            class="min-h-[38px] px-3 py-1.5 bg-[#121622] border border-zinc-800 rounded-xl text-white mono-font text-xs font-bold uppercase placeholder-zinc-600 focus:outline-none focus:border-amber-500">
+                        <button type="button" data-action="unlock-by-code"
+                            class="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[11px] uppercase tracking-wider shrink-0 cursor-pointer">
+                            Desbloquear Código
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-zinc-800/80 bg-[#0c1018]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-zinc-800 bg-[#121724] text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">
+                                <th class="py-3 px-3">Key VIP</th>
+                                <th class="py-3 px-3">Plano</th>
+                                <th class="py-3 px-3">Status</th>
+                                <th class="py-3 px-3">Expiração</th>
+                                <th class="py-3 px-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminKeysTableBody" class="divide-y divide-zinc-800/70 text-xs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         11. TOAST NOTIFICATION
+         ===================================================================== -->
+    <div id="toastNotification" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[10000] px-5 py-3 rounded-2xl bg-[#121215] border accent-border text-white text-xs font-extrabold shadow-2xl flex items-center gap-2.5 max-w-[92vw] pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check accent-text"></i>
+        <span id="toastMessage">Pronto!</span>
+    </div>
+
+    <!-- =====================================================================
+         APPLICATION LOGIC (CLEAN, ZERO SYNTAX ERRORS, STRICT ISOLATION)
+         ===================================================================== -->
+    <script>
+        (function () {
+            "use strict";
+
+            const STORAGE_KEYS = {
+                USERNAME: "matrix3d_n10_username",
+                KEYS: "matrix3d_n10_vip_keys",
+                ACTIVE_SESSION: "matrix3d_n10_active_session",
+                SETTINGS: "matrix3d_n10_settings",
+                MAINTENANCE: "matrix3d_n10_maintenance",
+                ACCENT: "matrix3d_n10_accent",
+                ADMIN_AUTH: "matrix3d_n10_admin_logged"
+            };
+
+            const CLOUD_API_URL = "/api/matrix-state";
+            let adminApiToken = "";
+            const DEFAULT_ALWAYS_ACTIVE_KEY_CODE = "MATRIX-3D-VIP";
+            const BUILTIN_MASTER_KEYS = {
+                "M3D-N10-VIP": { plan: "PERM", label: "VIP Permanente", durationMs: 0 },
+                "M3D-1D-TEST": { plan: "1D", label: "VIP 1 Dia", durationMs: 86400000 }
+            };
+
+            function createDefaultAlwaysActive3DKey() {
+                return {
+                    code: DEFAULT_ALWAYS_ACTIVE_KEY_CODE,
+                    plan: "3D",
+                    label: "VIP 3 Dias (Sempre Ativa)",
+                    durationHours: 72,
+                    active: true,
+                    createdAt: 1700000000000,
+                    updatedAt: 1700000000000,
+                    expiresAt: null,
+                    revoked: false,
+                    blocked: false,
+                    deleted: false
+                };
+            }
+
+            function ensureDefault3DKeyPresent(list) {
+                const arr = Array.isArray(list) ? [...list] : [];
+                const idx = arr.findIndex(k => k && String(k.code || "").toUpperCase() === DEFAULT_ALWAYS_ACTIVE_KEY_CODE);
+                if (idx === -1) {
+                    arr.unshift(createDefaultAlwaysActive3DKey());
+                } else {
+                    const existing = arr[idx];
+                    arr[idx] = {
+                        ...createDefaultAlwaysActive3DKey(),
+                        ...existing,
+                        code: DEFAULT_ALWAYS_ACTIVE_KEY_CODE,
+                        plan: "3D",
+                        label: existing.label || "VIP 3 Dias (Sempre Ativa)",
+                        durationHours: 72,
+                        expiresAt: null,
+                        active: !existing.revoked && !existing.deleted
+                    };
+                }
+                return arr;
+            }
+
+            const state = {
+                username: "",
+                keys: ensureDefault3DKeyPresent([]),
+                activeSession: null,
+                settings: {
+                    pixKey: "98981701265",
+                    whatsapp: "5598981701265"
+                },
+                maintenance: false,
+                accent: {
+                    color: "#f59e0b",
+                    hover: "#fbbf24",
+                    dark: "#b45309"
+                },
+                isAdminAuthenticated: false,
+                checkout: { plan: "", price: "", code: "" },
+                loadedFileName: "nenhum_arquivo.json",
+                baselineRawJson: "",
+                isFormattingJson: false,
+                currentUnlockCode: "",
+                timerInterval: null,
+                lastSearchQuery: "",
+                lastSearchIndex: -1
+            };
+
+            function readStorage(key, fallback) {
+                try {
+                    const val = window.localStorage.getItem(key);
+                    return val !== null ? val : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            }
+
+            function writeStorage(key, value) {
+                try {
+                    window.localStorage.setItem(key, value);
+                } catch (e) {}
+            }
+
+            // Strict Overlay Visibility Control
+            function setOverlayActive(id, active, blockMode) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.remove("is-active", "is-active-block");
+                if (active) {
+                    el.classList.add(blockMode ? "is-active-block" : "is-active");
+                }
+            }
+
+            function hideAllOverlays() {
+                setOverlayActive("splashScreen", false);
+                setOverlayActive("nickLoginScreen", false);
+                setOverlayActive("keyLoadingOverlay", false);
+                setOverlayActive("keyLockModal", false);
+                setOverlayActive("maintenanceOverlay", false);
+                setOverlayActive("checkoutModal", false);
+                setOverlayActive("adminAuthModal", false);
+                setOverlayActive("adminDashboardModal", false);
+            }
+
+            // Toast Notification
+            let toastTimeout = null;
+            function showToast(message, isError) {
+                const toast = document.getElementById("toastNotification");
+                const msgEl = document.getElementById("toastMessage");
+                const iconEl = document.getElementById("toastIcon");
+                if (!toast || !msgEl) return;
+
+                msgEl.textContent = message;
+                if (iconEl) {
+                    iconEl.className = isError
+                        ? "fa-solid fa-circle-exclamation text-red-400"
+                        : "fa-solid fa-circle-check accent-text";
+                }
+                toast.classList.remove("hidden");
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    toast.classList.add("hidden");
+                }, 2800);
+            }
+
+            // Clipboard Copy Helper
+            function copyText(text, label) {
+                if (!text) return;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => {});
+                }
+                try {
+                    const ta = document.createElement("textarea");
+                    ta.value = text;
+                    ta.style.position = "fixed";
+                    ta.style.left = "-9999px";
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(ta);
+                } catch (e) {}
+                showToast(label || "Copiado com sucesso!");
+            }
+
+            // Accent Theme Application
+            function applyAccentTheme(color, hover, dark, persist) {
+                const c = color || "#f59e0b";
+                const h = hover || c;
+                const d = dark || c;
+                state.accent = { color: c, hover: h, dark: d };
+
+                const root = document.documentElement;
+                root.style.setProperty("--accent", c);
+                root.style.setProperty("--accent-hover", h);
+                root.style.setProperty("--accent-dark", d);
+                root.style.setProperty("--accent-soft", c + "26");
+                root.style.setProperty("--accent-border", c + "59");
+                root.style.setProperty("--accent-glow", c + "40");
+
+                const picker = document.getElementById("customAccentPicker");
+                if (picker && /^#[0-9a-fA-F]{6}$/.test(c)) {
+                    picker.value = c;
+                }
+
+                if (persist) {
+                    writeStorage(STORAGE_KEYS.ACCENT, JSON.stringify(state.accent));
+                    pushCloudState();
+                }
+            }
+
+            // Maintenance Mode Application
+            function applyMaintenanceState() {
+                const btn = document.getElementById("maintenanceToggleBtn");
+                if (btn) {
+                    btn.textContent = state.maintenance ? "ATIVADO" : "DESATIVADO";
+                    btn.className = state.maintenance
+                        ? "px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer"
+                        : "px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-black text-xs uppercase tracking-wider transition cursor-pointer";
+                }
+
+                const adminOpen = document.getElementById("adminDashboardModal")?.classList.contains("is-active-block");
+                const adminAuthOpen = document.getElementById("adminAuthModal")?.classList.contains("is-active");
+
+                if (state.maintenance && !state.isAdminAuthenticated && !adminOpen && !adminAuthOpen) {
+                    setOverlayActive("maintenanceOverlay", true);
+                } else {
+                    setOverlayActive("maintenanceOverlay", false);
+                }
+            }
+
+            // Cloud Sync (Shared across all devices/visitors)
+            function mergeKeyLists(localList, remoteList) {
+                const map = new Map();
+                (Array.isArray(localList) ? localList : []).forEach(item => {
+                    if (item && item.code) map.set(item.code.toUpperCase(), item);
+                });
+                (Array.isArray(remoteList) ? remoteList : []).forEach(item => {
+                    if (item && item.code) {
+                        const code = item.code.toUpperCase();
+                        const existing = map.get(code);
+                        if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
+                            map.set(code, item);
+                        }
+                    }
+                });
+                return ensureDefault3DKeyPresent(Array.from(map.values())).filter(k => !k.deleted);
+            }
+
+            async function pushCloudState() {
+                const payload = {
+                    updatedAt: Date.now(), keys: state.keys,
+                    maintenance: state.maintenance,
+                    settings: state.settings, accent: state.accent
+                };
+                try {
+                    if (!adminApiToken) throw new Error("Entre no Painel ADM para sincronizar alterações.");
+                    const res = await fetch(CLOUD_API_URL, {
+                        method: "POST", headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${adminApiToken}`
+                        }, body: JSON.stringify({ action: "save", payload }), cache: "no-store"
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || `Servidor HTTP ${res.status}`);
+                    const badge = document.getElementById("cloudSyncBadge");
+                    if (badge) badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>NUVEM ATIVA</span>';
+                    const indicator = document.getElementById("syncStatusIndicator");
+                    if (indicator) indicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>Sincronização Ativa</span>';
+                    return true;
+                } catch (e) {
+                    console.error("Falha ao salvar estado Matrix 3D:", e);
+                    const badge = document.getElementById("cloudSyncBadge");
+                    if (badge) badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span><span>FALHA NA NUVEM</span>';
+                    const indicator = document.getElementById("syncStatusIndicator");
+                    if (indicator) indicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-400"></span><span>Falha na sincronização</span>';
+                    showToast(`Não foi possível salvar: ${e.message || "erro de conexão"}`, true);
+                    return false;
+                }
+            }
+
+            async function pullCloudState() {
+                try {
+                    const res = await fetch(CLOUD_API_URL, { method: "GET", cache: "no-store", headers: { "Accept": "application/json" } });
+                    if (!res.ok) throw new Error(`Servidor HTTP ${res.status}`);
+                    const data = await res.json();
+                    if (!data || typeof data !== "object" || !Array.isArray(data.keys)) throw new Error("Estado remoto inválido.");
+                    state.keys = mergeKeyLists(state.keys, data.keys);
+                    writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                    renderAdminKeysTable();
+                    const activeCode = state.activeSession && String(state.activeSession.code || "").toUpperCase();
+                    if (activeCode) {
+                        const record = state.keys.find(k => String(k.code || "").toUpperCase() === activeCode);
+                        if (!record || record.revoked || record.deleted || record.active === false || record.blocked) {
+                            state.activeSession = null; writeStorage(STORAGE_KEYS.ACTIVE_SESSION, "");
+                            clearInterval(state.timerInterval); showMainScreen();
+                            showToast("Esta Key VIP foi desativada ou bloqueada pelo ADM.", true);
+                        }
+                    }
+                    if (typeof data.maintenance === "boolean") {
+                        state.maintenance = data.maintenance;
+                        writeStorage(STORAGE_KEYS.MAINTENANCE, String(state.maintenance)); applyMaintenanceState();
+                    }
+                    if (data.settings && typeof data.settings === "object") {
+                        state.settings = { ...state.settings, ...data.settings };
+                        writeStorage(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings)); updatePixDisplays();
+                    }
+                    if (data.accent && /^#[0-9a-fA-F]{6}$/.test(data.accent.color || "")) {
+                        applyAccentTheme(data.accent.color, data.accent.hover, data.accent.dark, false);
+                        writeStorage(STORAGE_KEYS.ACCENT, JSON.stringify(state.accent));
+                    }
+                    const badge = document.getElementById("cloudSyncBadge");
+                    if (badge) badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>NUVEM ATIVA</span>';
+                    return true;
+                } catch (e) {
+                    console.error("Falha ao consultar Matrix 3D:", e);
+                    const badge = document.getElementById("cloudSyncBadge");
+                    if (badge) badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span><span>FALHA NA NUVEM</span>';
+                    return false;
+                }
+            }
+
+            function updatePixDisplays() {
+                const storePix = document.getElementById("storePixKeyDisplay");
+                const modalPix = document.getElementById("checkoutPixCode");
+                const adminPix = document.getElementById("adminPixInput");
+                if (storePix) storePix.textContent = state.settings.pixKey;
+                if (modalPix) modalPix.textContent = state.settings.pixKey;
+                if (adminPix && document.activeElement !== adminPix) {
+                    adminPix.value = state.settings.pixKey;
+                }
+            }
+
+            // Screen Navigation
+            function showMainScreen() {
+                hideAllOverlays();
+                const header = document.getElementById("mainHeader");
+                const main = document.getElementById("mainAppContent");
+                const editor = document.getElementById("vipEditorView");
+                const userLabel = document.getElementById("headerUsernameLabel");
+
+                if (userLabel) userLabel.textContent = state.username || "Jogador";
+                if (header) header.classList.remove("hidden");
+                if (editor) editor.classList.add("hidden");
+                if (main) main.classList.remove("hidden");
+
+                applyMaintenanceState();
+            }
+
+            function showEditorScreen(session) {
+                hideAllOverlays();
+                const header = document.getElementById("mainHeader");
+                const main = document.getElementById("mainAppContent");
+                const editor = document.getElementById("vipEditorView");
+
+                if (header) header.classList.remove("hidden");
+                if (main) main.classList.add("hidden");
+                if (editor) editor.classList.remove("hidden");
+
+                const planBadge = document.getElementById("editorActivePlanBadge");
+                const keyLabel = document.getElementById("editorActiveKeyLabel");
+                const limitBadge = document.getElementById("editorPlanLimitBadge");
+                if (planBadge) planBadge.textContent = session.label || "VIP ATIVO";
+                if (keyLabel) keyLabel.textContent = session.code;
+                if (limitBadge) {
+                    const p = String(session.plan || "").toUpperCase();
+                    if (p === "1D") {
+                        limitBadge.textContent = "1D: Máx 10.000 Coins | Até linha Coin";
+                    } else if (p === "2D") {
+                        limitBadge.textContent = "2D: Máx 20.000 Coins | Até linha Nickname";
+                    } else {
+                        limitBadge.textContent = "3D / PERM: Tudo Liberado";
+                    }
+                }
+
+                const rawEditor = document.getElementById("rawJsonCodeEditor");
+                state.baselineRawJson = rawEditor ? rawEditor.value : "";
+
+                startEditorCountdown(session.expiresAt);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+
+            function startEditorCountdown(expiresAt) {
+                clearInterval(state.timerInterval);
+                const timerEl = document.getElementById("editorTimerBadge");
+                if (!timerEl) return;
+
+                const tick = () => {
+                    if (!expiresAt || expiresAt <= 0) {
+                        timerEl.textContent = "PERMANENTE";
+                        return;
+                    }
+                    const diff = expiresAt - Date.now();
+                    if (diff <= 0) {
+                        clearInterval(state.timerInterval);
+                        state.activeSession = null;
+                        writeStorage(STORAGE_KEYS.ACTIVE_SESSION, "");
+                        showToast("Sua Key VIP expirou.", true);
+                        showMainScreen();
+                        return;
+                    }
+                    const totalSec = Math.floor(diff / 1000);
+                    const hrs = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+                    const mins = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+                    const secs = String(totalSec % 60).padStart(2, "0");
+                    timerEl.textContent = `${hrs}:${mins}:${secs}`;
+                };
+
+                tick();
+                state.timerInterval = setInterval(tick, 1000);
+            }
+
+            // Step 1 -> Step 2 Splash Transition (~1.1s)
+            function runSplashSequence() {
+                const bar = document.getElementById("splashBar");
+                const pct = document.getElementById("splashPercent");
+                let progress = 0;
+
+                const interval = setInterval(() => {
+                    progress += 20;
+                    if (progress > 100) progress = 100;
+                    if (bar) bar.style.width = progress + "%";
+                    if (pct) pct.textContent = progress + "%";
+
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            setOverlayActive("splashScreen", false);
+                            // Sempre solicitar o nickname após a tela de carregamento.
+                            // Se já existir um usuário salvo, apenas preencher o campo.
+                            const usernameInput = document.getElementById("usernameInput");
+                            if (usernameInput) usernameInput.value = state.username || "";
+                            setOverlayActive("nickLoginScreen", true);
+                        }, 180);
+                    }
+                }, 180);
+            }
+
+            // Nickname Submit
+            function handleNicknameSubmit() {
+                const input = document.getElementById("usernameInput");
+                const nick = (input ? input.value : "").trim() || "Jogador VIP";
+                state.username = nick;
+                writeStorage(STORAGE_KEYS.USERNAME, nick);
+                showMainScreen();
+            }
+
+            // Key Activation + "Carregando key..." Overlay
+            async function handleKeyActivation() {
+                const input = document.getElementById("vipKeyInput");
+                const feedback = document.getElementById("keyFeedbackBox");
+                const rawCode = (input ? input.value : "").trim().toUpperCase();
+
+                if (!rawCode) {
+                    if (feedback) {
+                        feedback.className = "mt-3 p-3.5 rounded-2xl text-xs font-bold bg-red-500/10 border border-red-500/40 text-red-400";
+                        feedback.textContent = "Digite uma Chave VIP válida antes de ativar.";
+                        feedback.classList.remove("hidden");
+                    }
+                    return;
+                }
+
+                // Sync latest keys from cloud with fast 2.5s timeout before validating
+                await pullCloudState();
+
+                let matchedKey = state.keys.find(k => String(k.code || "").toUpperCase() === rawCode && !k.deleted);
+                if (!matchedKey && BUILTIN_MASTER_KEYS[rawCode]) {
+                    const m = BUILTIN_MASTER_KEYS[rawCode];
+                    matchedKey = {
+                        code: rawCode,
+                        plan: m.plan,
+                        label: m.label,
+                        expiresAt: m.durationMs > 0 ? Date.now() + m.durationMs : 0,
+                        revoked: false,
+                        active: true
+                    };
+                }
+
+                if (!matchedKey || matchedKey.revoked || matchedKey.active === false) {
+                    if (feedback) {
+                        feedback.className = "mt-3 p-3.5 rounded-2xl text-xs font-bold bg-red-500/10 border border-red-500/40 text-red-400";
+                        feedback.textContent = "Key inválida ou desativada pelo ADM! Verifique o código e tente novamente.";
+                        feedback.classList.remove("hidden");
+                    }
+                    return;
+                }
+
+                if (matchedKey.blocked) {
+                    if (feedback) feedback.classList.add("hidden");
+                    openKeyLockModal(
+                        matchedKey.code,
+                        matchedKey.unlockCode || generateUnlockCode(),
+                        matchedKey.blockReason || "Esta Key foi bloqueada por ultrapassar o limite do plano. Envie o código abaixo ao ADM para desbloquear."
+                    );
+                    return;
+                }
+
+                if (matchedKey.expiresAt && matchedKey.expiresAt > 0 && Date.now() > matchedKey.expiresAt) {
+                    if (feedback) {
+                        feedback.className = "mt-3 p-3.5 rounded-2xl text-xs font-bold bg-red-500/10 border border-red-500/40 text-red-400";
+                        feedback.textContent = "Esta Key VIP já expirou.";
+                        feedback.classList.remove("hidden");
+                    }
+                    return;
+                }
+
+                if (feedback) feedback.classList.add("hidden");
+
+                const session = {
+                    code: matchedKey.code,
+                    plan: matchedKey.plan,
+                    label: matchedKey.label || getPlanLabel(matchedKey.plan),
+                    expiresAt: matchedKey.expiresAt || 0
+                };
+                state.activeSession = session;
+                writeStorage(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+
+                // Show "Carregando key..." transition (~1.2s)
+                const loadBar = document.getElementById("keyLoadingProgressBar");
+                if (loadBar) loadBar.style.width = "15%";
+                setOverlayActive("keyLoadingOverlay", true);
+
+                setTimeout(() => { if (loadBar) loadBar.style.width = "60%"; }, 300);
+                setTimeout(() => { if (loadBar) loadBar.style.width = "100%"; }, 750);
+                setTimeout(() => {
+                    setOverlayActive("keyLoadingOverlay", false);
+                    showEditorScreen(session);
+                    showToast("Key ativada com sucesso!");
+                }, 1150);
+            }
+
+            // Plan Security Limits & Auto-Lock Engine (1D / 2D / 3D)
+            function generateUnlockCode() {
+                const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                const chunk = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+                return `UNLK-${chunk()}-${chunk()}`;
+            }
+
+            function openKeyLockModal(keyCode, unlockCode, reasonText) {
+                state.currentUnlockCode = unlockCode;
+                const keyEl = document.getElementById("lockedKeyCodeDisplay");
+                const codeEl = document.getElementById("generatedUnlockCodeDisplay");
+                const reasonEl = document.getElementById("keyLockReasonText");
+                if (keyEl) keyEl.textContent = keyCode || "-";
+                if (codeEl) codeEl.textContent = unlockCode || "UNLK-0000-0000";
+                if (reasonEl) reasonEl.textContent = reasonText || "Limite do plano ultrapassado.";
+                setOverlayActive("keyLockModal", true);
+            }
+
+            function triggerPlanSecurityLock(reasonText) {
+                const session = state.activeSession;
+                if (!session || !session.code) return;
+
+                const unlockCode = generateUnlockCode();
+                const now = Date.now();
+                const targetCode = session.code.toUpperCase();
+                let found = false;
+
+                state.keys = state.keys.map(k => {
+                    if (k.code.toUpperCase() === targetCode) {
+                        found = true;
+                        return {
+                            ...k,
+                            blocked: true,
+                            unlockCode,
+                            blockReason: reasonText,
+                            updatedAt: now
+                        };
+                    }
+                    return k;
+                });
+
+                if (!found) {
+                    state.keys.unshift({
+                        code: targetCode,
+                        plan: session.plan || "1D",
+                        label: session.label || getPlanLabel(session.plan || "1D"),
+                        createdAt: now,
+                        updatedAt: now,
+                        expiresAt: session.expiresAt || 0,
+                        revoked: false,
+                        blocked: true,
+                        unlockCode,
+                        blockReason: reasonText,
+                        deleted: false
+                    });
+                }
+
+                writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                state.activeSession = null;
+                writeStorage(STORAGE_KEYS.ACTIVE_SESSION, "");
+                clearInterval(state.timerInterval);
+
+                renderAdminKeysTable();
+                pushCloudState();
+
+                const editor = document.getElementById("vipEditorView");
+                const main = document.getElementById("mainAppContent");
+                if (editor) editor.classList.add("hidden");
+                if (main) main.classList.remove("hidden");
+
+                openKeyLockModal(targetCode, unlockCode, reasonText);
+            }
+
+            function extractMaxCoinValue(rawText) {
+                let maxCoin = null;
+                const regex = /["']?coins?["']?\s*:\s*(-?\d+(?:\.\d+)?)/gi;
+                let match;
+                while ((match = regex.exec(rawText)) !== null) {
+                    const num = Number(match[1]);
+                    if (!Number.isNaN(num) && (maxCoin === null || num > maxCoin)) {
+                        maxCoin = num;
+                    }
+                }
+                return maxCoin;
+            }
+
+            function validateRawJsonAgainstPlan(newText) {
+                const session = state.activeSession;
+                if (!session) return true;
+
+                const plan = String(session.plan || "").toUpperCase();
+                if (plan === "3D" || plan === "PERM") {
+                    return true; // 3 Days / Permanent: fully unrestricted
+                }
+
+                const maxCoinAllowed = plan === "1D" ? 10000 : 20000;
+                const coinValue = extractMaxCoinValue(newText);
+                if (coinValue !== null && coinValue > maxCoinAllowed) {
+                    triggerPlanSecurityLock(
+                        `O plano ${plan === "1D" ? "VIP 1 Dia" : "VIP 2 Dias"} permite no máximo ${maxCoinAllowed.toLocaleString("pt-BR")} coins (você colocou ${coinValue.toLocaleString("pt-BR")}).`
+                    );
+                    return false;
+                }
+
+                const baseline = state.baselineRawJson || "";
+                if (!baseline.trim()) {
+                    state.baselineRawJson = newText;
+                    return true;
+                }
+
+                const baseLines = baseline.replace(/\r\n/g, "\n").split("\n");
+                const currentLines = newText.replace(/\r\n/g, "\n").split("\n");
+                const boundaryKeyword = plan === "1D" ? "coin" : "nickname";
+                const boundaryIndex = baseLines.findIndex(line => line.toLowerCase().includes(boundaryKeyword));
+
+                if (boundaryIndex !== -1) {
+                    const baseAfter = baseLines.slice(boundaryIndex + 1).join("\n");
+                    const currentAfter = currentLines.slice(boundaryIndex + 1).join("\n");
+                    if (baseAfter !== currentAfter) {
+                        const fieldLabel = plan === "1D" ? "coin" : "nickname";
+                        triggerPlanSecurityLock(
+                            `No plano ${plan === "1D" ? "VIP 1 Dia" : "VIP 2 Dias"}, não é permitido editar nenhuma linha abaixo de "${fieldLabel}".`
+                        );
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            // Raw JSON Search (Lupa)
+            function searchInRawJson() {
+                const queryInput = document.getElementById("rawJsonSearchInput");
+                const editor = document.getElementById("rawJsonCodeEditor");
+                const counter = document.getElementById("searchMatchCounter");
+                const query = (queryInput ? queryInput.value : "").trim();
+
+                if (!editor || !query) {
+                    state.lastSearchQuery = "";
+                    state.lastSearchIndex = -1;
+                    if (counter) counter.textContent = "0 resultados";
+                    showToast("Digite um termo na lupa para buscar.", true);
+                    return;
+                }
+
+                const text = editor.value;
+                const lowerText = text.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+                const positions = [];
+                let idx = lowerText.indexOf(lowerQuery);
+
+                while (idx !== -1) {
+                    positions.push(idx);
+                    idx = lowerText.indexOf(lowerQuery, idx + lowerQuery.length);
+                }
+
+                if (positions.length === 0) {
+                    state.lastSearchQuery = lowerQuery;
+                    state.lastSearchIndex = -1;
+                    if (counter) counter.textContent = "0 resultados";
+                    showToast(`Nenhum resultado para "${query}".`, true);
+                    return;
+                }
+
+                if (state.lastSearchQuery === lowerQuery) {
+                    state.lastSearchIndex = (state.lastSearchIndex + 1) % positions.length;
+                } else {
+                    state.lastSearchQuery = lowerQuery;
+                    state.lastSearchIndex = 0;
+                }
+
+                const matchPos = positions[state.lastSearchIndex];
+                if (counter) {
+                    counter.textContent = `${state.lastSearchIndex + 1} de ${positions.length}`;
+                }
+
+                editor.focus();
+                editor.setSelectionRange(matchPos, matchPos + query.length);
+
+                // Scroll textarea to matched line
+                const linesBefore = text.slice(0, matchPos).split("\n").length - 1;
+                editor.scrollTop = Math.max(0, (linesBefore - 3) * 18);
+            }
+
+            // Admin Keys Management
+            function getPlanLabel(code) {
+                if (code === "1D") return "VIP 1 Dia";
+                if (code === "2D") return "VIP 2 Dias";
+                if (code === "3D") return "VIP 3 Dias";
+                return "VIP Permanente";
+            }
+
+            function getPlanDurationMs(code) {
+                if (code === "1D") return 24 * 60 * 60 * 1000;
+                if (code === "2D") return 48 * 60 * 60 * 1000;
+                if (code === "3D") return 72 * 60 * 60 * 1000;
+                return 0;
+            }
+
+            function generateVipKey() {
+                const durSelect = document.getElementById("adminKeyDurationSelect");
+                const customInput = document.getElementById("adminCustomKeyInput");
+                const plan = durSelect ? durSelect.value : "1D";
+                let code = (customInput ? customInput.value : "").trim().toUpperCase();
+
+                if (!code) {
+                    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                    const rand = (len) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+                    code = `M3D-${plan}-${rand(4)}-${rand(4)}`;
+                }
+
+                const durationMs = getPlanDurationMs(plan);
+                const now = Date.now();
+                const newKey = {
+                    code,
+                    plan,
+                    label: getPlanLabel(plan),
+                    createdAt: now,
+                    updatedAt: now,
+                    expiresAt: durationMs > 0 ? now + durationMs : 0,
+                    revoked: false,
+                    deleted: false
+                };
+
+                state.keys = [newKey, ...state.keys.filter(k => k.code !== code)];
+                writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                if (customInput) customInput.value = "";
+                renderAdminKeysTable();
+                pushCloudState();
+                copyText(code, `Key ${code} gerada e copiada!`);
+            }
+
+            function renderAdminKeysTable() {
+                const tbody = document.getElementById("adminKeysTableBody");
+                const countBadge = document.getElementById("adminKeysCountBadge");
+                const activeKeys = state.keys.filter(k => !k.deleted);
+
+                if (countBadge) {
+                    countBadge.textContent = `${activeKeys.length} ${activeKeys.length === 1 ? "key" : "keys"}`;
+                }
+                if (!tbody) return;
+
+                if (activeKeys.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-zinc-500 text-xs">Nenhuma key gerada ainda.</td></tr>`;
+                    return;
+                }
+
+                const now = Date.now();
+                tbody.innerHTML = activeKeys.map(k => {
+                    const expired = k.expiresAt && k.expiresAt > 0 && now > k.expiresAt;
+                    const isRevoked = Boolean(k.revoked || k.active === false);
+                    const statusBadge = k.blocked
+                        ? `<div class="space-y-1">
+                               <span class="inline-block px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-extrabold">BLOQUEADA</span>
+                               <span class="block mono-font text-[10px] font-bold text-amber-400">${k.unlockCode || "UNLK-LOCK"}</span>
+                           </div>`
+                        : isRevoked
+                            ? `<span class="px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[10px] font-extrabold">DESATIVADA</span>`
+                            : expired
+                                ? `<span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px] font-extrabold">EXPIRADA</span>`
+                                : `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold">ATIVA</span>`;
+
+                    const expText = !k.expiresAt || k.expiresAt <= 0
+                        ? (k.code === DEFAULT_ALWAYS_ACTIVE_KEY_CODE ? "Sempre Ativa (3D)" : "Permanente")
+                        : new Date(k.expiresAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+                    const unlockActionBtn = k.blocked
+                        ? `<button type="button" data-action="unlock-key" data-key="${k.code}" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[11px] cursor-pointer">Desbloquear Key</button>`
+                        : "";
+
+                    return `
+                        <tr>
+                            <td class="py-2.5 px-2 mono-font font-bold accent-text">${k.code}</td>
+                            <td class="py-2.5 px-2 text-zinc-200 font-semibold">${k.label || getPlanLabel(k.plan)}</td>
+                            <td class="py-2.5 px-2">${statusBadge}</td>
+                            <td class="py-2.5 px-2 text-zinc-400">${expText}</td>
+                            <td class="py-2.5 px-2 text-right space-x-1 whitespace-nowrap">
+                                ${unlockActionBtn}
+                                <button type="button" data-action="copy-key" data-key="${k.code}" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 accent-text font-bold text-[11px] cursor-pointer">Copiar</button>
+                                <button type="button" data-action="toggle-key" data-key="${k.code}" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-[11px] cursor-pointer">${isRevoked ? "Ativar" : "Desativar"}</button>
+                                <button type="button" data-action="delete-key" data-key="${k.code}" class="px-2.5 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 font-bold text-[11px] cursor-pointer">Excluir</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+
+            // Resilient Global Event Delegation (Works reliably across mobile touch & desktop clicks)
+            document.addEventListener("click", async (ev) => {
+                const actionEl = ev.target.closest("[data-action]");
+                if (!actionEl) return;
+                const action = actionEl.getAttribute("data-action");
+
+                switch (action) {
+                    case "submit-nick":
+                        ev.preventDefault();
+                        handleNicknameSubmit();
+                        break;
+
+                    case "switch-user":
+                        setOverlayActive("nickLoginScreen", true);
+                        break;
+
+                    case "activate-key":
+                        handleKeyActivation();
+                        break;
+
+                    case "back-to-main":
+                        showMainScreen();
+                        break;
+
+                    case "copy-pix":
+                        copyText(state.settings.pixKey, `Chave Pix ${state.settings.pixKey} copiada!`);
+                        break;
+
+                    case "buy-plan": {
+                        state.checkout = {
+                            plan: actionEl.getAttribute("data-plan") || "Plano VIP",
+                            price: actionEl.getAttribute("data-price") || "R$ 1,00",
+                            code: actionEl.getAttribute("data-code") || "1D"
+                        };
+                        document.getElementById("checkoutPlanTitle").textContent = state.checkout.plan;
+                        document.getElementById("checkoutPlanPrice").textContent = state.checkout.price;
+                        document.getElementById("checkoutUserNick").textContent = state.username || "Jogador VIP";
+                        updatePixDisplays();
+                        setOverlayActive("checkoutModal", true);
+                        break;
+                    }
+
+                    case "close-checkout":
+                        setOverlayActive("checkoutModal", false);
+                        break;
+
+                    case "confirm-whatsapp": {
+                        const msg = encodeURIComponent(
+                            `Olá! Fiz o Pix de *${state.checkout.price}* referente ao plano *${state.checkout.plan}* no *Matrix 3D VIP & Save*.\nNick: *${state.username || "Jogador"}*\nSegue o comprovante:`
+                        );
+                        window.open(`https://wa.me/${state.settings.whatsapp}?text=${msg}`, "_blank");
+                        break;
+                    }
+
+                    case "open-admin-auth":
+                        document.getElementById("adminPasswordInput").value = "";
+                        document.getElementById("adminAuthError").classList.add("hidden");
+                        setOverlayActive("adminAuthModal", true);
+                        break;
+
+                    case "close-admin-auth":
+                        setOverlayActive("adminAuthModal", false);
+                        applyMaintenanceState();
+                        break;
+
+                    case "submit-admin-login": {
+                        ev.preventDefault();
+                        const pass = document.getElementById("adminPasswordInput").value;
+                        try {
+                            const loginRes = await fetch(CLOUD_API_URL, {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "login", password: pass }), cache: "no-store"
+                            });
+                            const loginData = await loginRes.json().catch(() => ({}));
+                            if (!loginRes.ok || !loginData.token) throw new Error(loginData.error || "Credenciais inválidas.");
+                            adminApiToken = loginData.token;
+                            state.isAdminAuthenticated = true;
+                            writeStorage(STORAGE_KEYS.ADMIN_AUTH, "true");
+                            setOverlayActive("adminAuthModal", false);
+                            updatePixDisplays();
+                            renderAdminKeysTable();
+                            applyMaintenanceState();
+                            setOverlayActive("adminDashboardModal", true, true);
+                        } catch (loginError) {
+                            document.getElementById("adminAuthError").classList.remove("hidden");
+                            showToast(loginError.message || "Falha no login ADM.", true);
+                        }
+                        break;
+                    }
+
+                    case "close-admin-dashboard":
+                        setOverlayActive("adminDashboardModal", false);
+                        applyMaintenanceState();
+                        break;
+
+                    case "generate-vip-key":
+                        generateVipKey();
+                        break;
+
+                    case "copy-key":
+                        copyText(actionEl.getAttribute("data-key"), "Key copiada!");
+                        break;
+
+                    case "toggle-key": {
+                        const code = actionEl.getAttribute("data-key");
+                        state.keys = state.keys.map(k => {
+                            if (k.code !== code) return k;
+                            const nextRevoked = !(k.revoked || k.active === false);
+                            return { ...k, revoked: nextRevoked, active: !nextRevoked, updatedAt: Date.now() };
+                        });
+                        writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                        renderAdminKeysTable();
+                        pushCloudState();
+                        showToast("Status da key atualizado.");
+                        break;
+                    }
+
+                    case "delete-key": {
+                        const code = actionEl.getAttribute("data-key");
+                        state.keys = state.keys.map(k => k.code === code ? { ...k, deleted: true, active: false, revoked: true, updatedAt: Date.now() } : k);
+                        writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                        renderAdminKeysTable();
+                        pushCloudState();
+                        showToast("Key removida.");
+                        break;
+                    }
+
+                    case "unlock-key": {
+                        const code = actionEl.getAttribute("data-key");
+                        state.keys = state.keys.map(k => k.code === code ? {
+                            ...k,
+                            blocked: false,
+                            unlockCode: "",
+                            blockReason: "",
+                            updatedAt: Date.now()
+                        } : k);
+                        writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                        renderAdminKeysTable();
+                        pushCloudState();
+                        showToast(`Key ${code} desbloqueada com sucesso!`);
+                        break;
+                    }
+
+                    case "unlock-by-code": {
+                        const input = document.getElementById("adminUnlockCodeInput");
+                        const unlockVal = (input ? input.value : "").trim().toUpperCase();
+                        if (!unlockVal) {
+                            showToast("Digite o código UNLK para desbloquear.", true);
+                            return;
+                        }
+                        const foundKey = state.keys.find(k => !k.deleted && k.blocked && (k.unlockCode || "").toUpperCase() === unlockVal);
+                        if (!foundKey) {
+                            showToast("Código de desbloqueio não encontrado.", true);
+                            return;
+                        }
+                        state.keys = state.keys.map(k => k.code === foundKey.code ? {
+                            ...k,
+                            blocked: false,
+                            unlockCode: "",
+                            blockReason: "",
+                            updatedAt: Date.now()
+                        } : k);
+                        if (input) input.value = "";
+                        writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+                        renderAdminKeysTable();
+                        pushCloudState();
+                        showToast(`Key ${foundKey.code} desbloqueada!`);
+                        break;
+                    }
+
+                    case "copy-unlock-code":
+                        copyText(state.currentUnlockCode, "Código de desbloqueio copiado!");
+                        break;
+
+                    case "close-key-lock-modal":
+                        setOverlayActive("keyLockModal", false);
+                        showMainScreen();
+                        break;
+
+                    case "toggle-maintenance":
+                        state.maintenance = !state.maintenance;
+                        writeStorage(STORAGE_KEYS.MAINTENANCE, String(state.maintenance));
+                        applyMaintenanceState();
+                        pushCloudState();
+                        showToast(state.maintenance ? "Modo Manutenção ATIVADO." : "Modo Manutenção DESATIVADO.");
+                        break;
+
+                    case "save-pix-setting": {
+                        const val = document.getElementById("adminPixInput").value.trim();
+                        if (val) {
+                            state.settings.pixKey = val;
+                            writeStorage(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+                            updatePixDisplays();
+                            pushCloudState();
+                            showToast("Chave Pix atualizada!");
+                        }
+                        break;
+                    }
+
+                    case "sync-now-admin":
+                        pushCloudState().then(async (saved) => {
+                            if (saved) {
+                                const loaded = await pullCloudState();
+                                showToast(loaded ? "Sincronização concluída!" : "Dados salvos, mas não foi possível confirmar a leitura.", !loaded);
+                            }
+                        });
+                        break;
+
+                    case "set-accent":
+                        applyAccentTheme(
+                            actionEl.getAttribute("data-color"),
+                            actionEl.getAttribute("data-hover"),
+                            actionEl.getAttribute("data-dark"),
+                            true
+                        );
+                        showToast("Cor global atualizada!");
+                        break;
+
+                    case "load-sample-json": {
+                        const sample = {
+                            playerProfile: {
+                                coins: 5000,
+                                diamonds: 1200,
+                                nickname: state.username || "JogadorN10",
+                                level: 65,
+                                vipStatus: true
+                            },
+                            inventory: [
+                                { id: "ITEM_101", name: "Camisa 10 Dourada", equipped: true },
+                                { id: "ITEM_205", name: "Coroa Matrix 3D", equipped: true }
+                            ]
+                        };
+                        const formattedSample = JSON.stringify(sample, null, 2);
+                        state.loadedFileName = "exemplo_save_n10.json";
+                        state.baselineRawJson = formattedSample;
+                        document.getElementById("loadedFileNameLabel").textContent = state.loadedFileName;
+                        document.getElementById("rawJsonCodeEditor").value = formattedSample;
+                        showToast("Exemplo .json carregado!");
+                        break;
+                    }
+
+                    case "search-raw-json":
+                        searchInRawJson();
+                        break;
+
+                    case "format-raw-json": {
+                        const editor = document.getElementById("rawJsonCodeEditor");
+                        if (!editor || !editor.value.trim()) return;
+                        try {
+                            const parsed = JSON.parse(editor.value);
+                            const formatted = JSON.stringify(parsed, null, 2);
+                            state.isFormattingJson = true;
+                            if (state.baselineRawJson && state.baselineRawJson.trim()) {
+                                try {
+                                    state.baselineRawJson = JSON.stringify(JSON.parse(state.baselineRawJson), null, 2);
+                                } catch (err) {
+                                    state.baselineRawJson = formatted;
+                                }
+                            } else {
+                                state.baselineRawJson = formatted;
+                            }
+                            editor.value = formatted;
+                            state.isFormattingJson = false;
+                            showToast("JSON formatado!");
+                        } catch (e) {
+                            state.isFormattingJson = false;
+                            showToast("JSON inválido para formatação.", true);
+                        }
+                        break;
+                    }
+
+                    case "copy-raw-json": {
+                        const editor = document.getElementById("rawJsonCodeEditor");
+                        if (!editor.value.trim()) {
+                            showToast("Nada para copiar.", true);
+                            return;
+                        }
+                        if (!validateRawJsonAgainstPlan(editor.value)) return;
+                        copyText(editor.value, "Código .json copiado!");
+                        break;
+                    }
+
+                    case "download-raw-json": {
+                        const editor = document.getElementById("rawJsonCodeEditor");
+                        if (!editor.value.trim()) {
+                            showToast("Carregue ou digite um código .json antes de baixar.", true);
+                            return;
+                        }
+                        if (!validateRawJsonAgainstPlan(editor.value)) return;
+                        const blob = new Blob([editor.value], { type: "application/json;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = state.loadedFileName.endsWith(".json") ? state.loadedFileName : `${state.loadedFileName}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        showToast("Arquivo .json baixado!");
+                        break;
+                    }
+                }
+            });
+
+            // Form & Keyboard Listeners
+            document.getElementById("nickLoginForm")?.addEventListener("submit", (e) => {
+                e.preventDefault();
+                handleNicknameSubmit();
+            });
+
+            document.getElementById("adminAuthForm")?.addEventListener("submit", (e) => {
+                e.preventDefault();
+                document.querySelector('[data-action="submit-admin-login"]')?.click();
+            });
+
+            document.getElementById("vipKeyInput")?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleKeyActivation();
+                }
+            });
+
+            document.getElementById("rawJsonSearchInput")?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    searchInRawJson();
+                }
+            });
+
+            document.getElementById("customAccentPicker")?.addEventListener("input", (e) => {
+                const hex = e.target.value;
+                applyAccentTheme(hex, hex, hex, true);
+            });
+
+            // File Upload Handler (.json)
+            document.getElementById("jsonFileUploadInput")?.addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                state.loadedFileName = file.name || "save.json";
+                document.getElementById("loadedFileNameLabel").textContent = state.loadedFileName;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const content = String(ev.target.result || "");
+                    state.baselineRawJson = content;
+                    document.getElementById("rawJsonCodeEditor").value = content;
+                    showToast(`Arquivo ${state.loadedFileName} carregado!`);
+                };
+                reader.readAsText(file);
+            });
+
+            // Real-time Plan Limit & Line Boundary Guard in Raw JSON Editor
+            document.getElementById("rawJsonCodeEditor")?.addEventListener("input", (e) => {
+                if (state.isFormattingJson) return;
+                validateRawJsonAgainstPlan(e.target.value);
+            });
+
+            // Initialize App State
+            function bootstrap() {
+                state.username = readStorage(STORAGE_KEYS.USERNAME, "");
+                state.maintenance = readStorage(STORAGE_KEYS.MAINTENANCE, "false") === "true";
+                state.isAdminAuthenticated = readStorage(STORAGE_KEYS.ADMIN_AUTH, "false") === "true";
+
+                try {
+                    const savedKeys = JSON.parse(readStorage(STORAGE_KEYS.KEYS, "[]"));
+                    state.keys = ensureDefault3DKeyPresent(Array.isArray(savedKeys) ? savedKeys : []);
+                } catch (e) {
+                    state.keys = ensureDefault3DKeyPresent([]);
+                }
+                writeStorage(STORAGE_KEYS.KEYS, JSON.stringify(state.keys));
+
+                try {
+                    const savedSettings = JSON.parse(readStorage(STORAGE_KEYS.SETTINGS, "null"));
+                    if (savedSettings && savedSettings.pixKey) state.settings = savedSettings;
+                } catch (e) {}
+
+                try {
+                    const savedAccent = JSON.parse(readStorage(STORAGE_KEYS.ACCENT, "null"));
+                    if (savedAccent && savedAccent.color) {
+                        applyAccentTheme(savedAccent.color, savedAccent.hover, savedAccent.dark, false);
+                    }
+                } catch (e) {}
+
+                updatePixDisplays();
+                renderAdminKeysTable();
+                runSplashSequence();
+                setTimeout(() => {
+                    pullCloudState();
+                }, 150);
+                setInterval(pullCloudState, 8000);
+            }
+
+            bootstrap();
+        })();
+    </script>
+</body>
+</html>
