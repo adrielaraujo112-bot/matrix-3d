@@ -337,9 +337,9 @@
             <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-5 sm:p-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <span class="text-[11px] font-extrabold accent-text uppercase tracking-widest">PLANOS &amp; ASSINATURAS VIP</span>
-                        <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">Escolha seu Plano VIP</h2>
-                        <p class="text-xs text-zinc-400 mt-1">Pagamento instantâneo via Pix com liberação imediata da sua Key.</p>
+                        <span class="text-[11px] font-extrabold accent-text uppercase tracking-widest">CONTAS DISPONÍVEIS</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">Escolha sua Conta</h2>
+                        <p class="text-xs text-zinc-400 mt-1">Escolha a categoria desejada e fale diretamente com nosso atendimento pelo WhatsApp.</p>
                     </div>
 
                     <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between sm:justify-end gap-3">
@@ -356,83 +356,73 @@
                 </div>
             </div>
 
-            <!-- 3 Pricing Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- VIP 1 Dia -->
+            <!-- 4 Cards de Contas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:border-zinc-700 transition">
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-extrabold uppercase">ACESSO 24H</span>
-                            <i class="fa-solid fa-bolt accent-text"></i>
+                            <span class="px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-extrabold uppercase">BÁSICA</span>
+                            <i class="fa-solid fa-user accent-text"></i>
                         </div>
-                        <h3 class="text-xl font-black text-white">VIP 1 Dia</h3>
-                        <p class="text-xs text-zinc-400 mt-1">Acesso rápido por 24 horas ao editor .json e código bruto.</p>
-                        <div class="my-5 flex items-baseline gap-1.5">
-                            <span class="text-3xl font-black accent-text">R$ 1,00</span>
-                            <span class="text-xs text-zinc-500">/ 24 horas</span>
-                        </div>
-                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Leitura e edição .json</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Lupa de busca no código bruto</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Exportação imediata</li>
-                        </ul>
+                        <h3 class="text-xl font-black text-white">Conta Comum</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Opção simples para começar.</p>
+                        <div class="my-5 flex items-baseline gap-1.5"><span class="text-3xl font-black accent-text">R$ 1,50</span></div>
+                        <p class="text-xs text-zinc-400 mb-6">Selecione esta opção para consultar os detalhes da conta.</p>
                     </div>
-                    <button type="button" data-action="buy-plan" data-plan="VIP 1 Dia" data-price="R$ 1,00" data-code="1D"
+                    <button type="button" data-action="buy-plan" data-plan="Conta Comum" data-price="R$ 1,50" data-code="COMUM"
                         class="w-full py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
-                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
-                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i><span class="pointer-events-none">COMPRAR AGORA</span>
                     </button>
                 </div>
 
-                <!-- VIP 2 Dias -->
-                <div class="bg-[#121215] border accent-border rounded-3xl p-6 flex flex-col justify-between shadow-xl accent-shadow">
+                <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:border-zinc-700 transition">
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="px-3 py-1 rounded-full accent-soft-bg accent-text text-[10px] font-extrabold uppercase">MAIS ESCOLHIDO</span>
-                            <i class="fa-solid fa-fire accent-text"></i>
+                            <span class="px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 text-[10px] font-extrabold uppercase">ÉPICA</span>
+                            <i class="fa-solid fa-gem text-sky-300"></i>
                         </div>
-                        <h3 class="text-xl font-black text-white">VIP 2 Dias</h3>
-                        <p class="text-xs text-zinc-400 mt-1">48 horas completas de acesso liberado ao editor de saves.</p>
-                        <div class="my-5 flex items-baseline gap-1.5">
-                            <span class="text-3xl font-black accent-text">R$ 2,00</span>
-                            <span class="text-xs text-zinc-500">/ 48 horas</span>
-                        </div>
-                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Leitura e edição .json completa</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Busca avançada no código bruto</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Suporte prioritário WhatsApp</li>
-                        </ul>
+                        <h3 class="text-xl font-black text-white">Conta Épica</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Uma opção com ótimo custo-benefício.</p>
+                        <div class="my-5 flex items-baseline gap-1.5"><span class="text-3xl font-black accent-text">R$ 2,50</span></div>
+                        <p class="text-xs text-zinc-400 mb-6">Selecione esta opção para consultar os detalhes da conta.</p>
                     </div>
-                    <button type="button" data-action="buy-plan" data-plan="VIP 2 Dias" data-price="R$ 2,00" data-code="2D"
+                    <button type="button" data-action="buy-plan" data-plan="Conta Épica" data-price="R$ 2,50" data-code="EPICA"
                         class="w-full py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg accent-shadow transition flex items-center justify-center gap-2 cursor-pointer">
-                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
-                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i><span class="pointer-events-none">COMPRAR AGORA</span>
                     </button>
                 </div>
 
-                <!-- VIP 3 Dias / Permanente -->
                 <div class="bg-[#121215] border border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:border-zinc-700 transition">
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold uppercase">ACESSO TOTAL</span>
-                            <i class="fa-solid fa-crown accent-text"></i>
+                            <span class="px-3 py-1 rounded-full bg-fuchsia-500/15 text-fuchsia-300 text-[10px] font-extrabold uppercase">RARA</span>
+                            <i class="fa-solid fa-star text-fuchsia-300"></i>
                         </div>
-                        <h3 class="text-xl font-black text-white">VIP 3 Dias / Permanente</h3>
-                        <p class="text-xs text-zinc-400 mt-1">Acesso ilimitado e vitalício a todos os recursos do Matrix 3D.</p>
-                        <div class="my-5 flex items-baseline gap-1.5">
-                            <span class="text-3xl font-black accent-text">R$ 3,50</span>
-                            <span class="text-xs text-zinc-500">/ permanente</span>
-                        </div>
-                        <ul class="space-y-2.5 text-xs text-zinc-300 mb-6">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Chave permanente sem expiração</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Edição ilimitada de arquivos .json</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Atualizações futuras inclusas</li>
-                        </ul>
+                        <h3 class="text-xl font-black text-white">Conta Rara</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Uma seleção especial de conta.</p>
+                        <div class="my-5 flex items-baseline gap-1.5"><span class="text-3xl font-black accent-text">R$ 4,50</span></div>
+                        <p class="text-xs text-zinc-400 mb-6">Selecione esta opção para consultar os detalhes da conta.</p>
                     </div>
-                    <button type="button" data-action="buy-plan" data-plan="VIP 3 Dias / Permanente" data-price="R$ 3,50" data-code="PERM"
+                    <button type="button" data-action="buy-plan" data-plan="Conta Rara" data-price="R$ 4,50" data-code="RARA"
                         class="w-full py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
-                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i>
-                        <span class="pointer-events-none">COMPRAR AGORA</span>
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i><span class="pointer-events-none">COMPRAR AGORA</span>
+                    </button>
+                </div>
+
+                <div class="bg-[#121215] border border-amber-500/40 rounded-3xl p-6 flex flex-col justify-between shadow-xl accent-shadow">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-extrabold uppercase">DESTAQUE</span>
+                            <i class="fa-solid fa-crown text-amber-300"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-white">Conta Lendária</h3>
+                        <p class="text-xs text-zinc-400 mt-1">Nossa categoria em destaque.</p>
+                        <div class="my-5 flex items-baseline gap-1.5"><span class="text-3xl font-black accent-text">R$ 5,50</span></div>
+                        <p class="text-xs text-zinc-400 mb-6">Selecione esta opção para consultar os detalhes da conta.</p>
+                    </div>
+                    <button type="button" data-action="buy-plan" data-plan="Conta Lendária" data-price="R$ 5,50" data-code="LENDARIA"
+                        class="w-full py-3.5 rounded-2xl accent-bg text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg accent-shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-cart-shopping pointer-events-none"></i><span class="pointer-events-none">COMPRAR AGORA</span>
                     </button>
                 </div>
             </div>
@@ -619,7 +609,7 @@
         <div class="w-full max-w-md bg-[#121215] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest">PAGAMENTO VIA PIX</span>
+                    <span class="text-[10px] font-extrabold accent-text uppercase tracking-widest">FINALIZAR PEDIDO</span>
                     <h3 id="checkoutPlanTitle" class="text-xl font-black text-white">Plano VIP</h3>
                 </div>
                 <button type="button" data-action="close-checkout" class="w-9 h-9 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer">
@@ -629,7 +619,7 @@
 
             <div class="bg-[#09090b] border border-zinc-800 rounded-2xl p-4 space-y-3">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-zinc-400">Valor do Plano:</span>
+                    <span class="text-zinc-400">Valor da Conta:</span>
                     <span id="checkoutPlanPrice" class="text-lg font-black accent-text">R$ 0,00</span>
                 </div>
                 <div class="flex items-center justify-between text-xs">
@@ -650,7 +640,7 @@
             <button type="button" data-action="confirm-whatsapp"
                 class="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-brands fa-whatsapp text-base pointer-events-none"></i>
-                <span class="pointer-events-none">Enviar Comprovante no WhatsApp</span>
+                <span class="pointer-events-none">Enviar Pedido pelo WhatsApp</span>
             </button>
         </div>
     </div>
@@ -1760,7 +1750,7 @@
 
                     case "confirm-whatsapp": {
                         const msg = encodeURIComponent(
-                            `Olá! Fiz o Pix de *${state.checkout.price}* referente ao plano *${state.checkout.plan}* no *Matrix 3D VIP & Save*.\nNick: *${state.username || "Jogador"}*\nSegue o comprovante:`
+                            `Olá! Acabei de realizar a compra de uma *${state.checkout.plan}* no *Matrix 3D VIP & Save*, no valor de *${state.checkout.price}*. Gostaria de confirmar meu pedido e receber as próximas orientações. Obrigado!`
                         );
                         window.open(`https://wa.me/${state.settings.whatsapp}?text=${msg}`, "_blank");
                         break;
